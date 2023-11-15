@@ -1,9 +1,4 @@
-import circlify
-import numpy as np
 import pandas as pd
-import plotly
-import plotly.express as px
-import plotly.graph_objects as go
 
 
 def read_sheet(file_path):

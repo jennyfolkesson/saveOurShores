@@ -1,5 +1,6 @@
 import argparse
 import os
+import numpy as np
 import pandas as pd
 
 
@@ -28,22 +29,51 @@ def read_sheet(file_path):
     """
     sos_data = pd.read_excel(file_path, na_values=['UNK', 'Unk', '-'])
 
+    col_names = list(sos_data)
+    # Check if table axes are flipped (items should be in columns)
+    nbr_unknowns = [col for col in col_names if isinstance(col, str) and 'Unnamed' in col]
+    if len(nbr_unknowns) > 0:
+        sos_data = sos_data.set_index(col_names[0]).rename_axis(None)
+        sos_data = sos_data.T
+        # Drop NaN columns
+        sos_data.drop([np.nan], axis=1, inplace=True)
+        # Drop NaN rows
+        sos_data = sos_data.dropna(how='all')
+        # Sum all 'Other:' items so we don't have hundreds of columns
+        col_names = list(sos_data)
+        if 'Other:' in col_names:
+            other_idx = sos_data.columns.get_loc('Other:')
+            sos_data['Other Sum'] = sos_data[col_names[other_idx:]].sum(axis=1)
+            # Drop the columns whos values have been summed in 'Other Sum'
+            sos_data.drop(col_names[other_idx:], axis=1, inplace=True)
+
     # Shorten names
     sos_data.rename(
         columns={'Date of Cleanup Event/Fecha': 'Date',
+                 'Cleanup Date': 'Date',
                  'Cleanup Site/Sitio de limpieza': 'Cleanup Site',
                  'Estimated size of location cleaned (sq miles)': 'Cleaned size (sq miles)',
+                 'Cleanup Area': 'Cleaned size (sq miles)',
                  'Total Cleanup Duration (hrs)': 'Duration (hrs)',
+                 '# of Volunteers': 'Adult Volunteers',
+                 'Pounds of Trash Collected': 'Pounds of Trash',
+                 'Pounds of Recycle Collected': 'Pounds of Recycling',
                  'County/City where the event was held?': 'County/City',
                  'County': 'County/City',
                  'Clothes, cloth': 'Clothes/Cloth',
+                 'Clothes or towels': 'Clothes/Cloth',
                  'Wood pallets, pieces and processed wood': 'Wood pieces',
                  'Appliances (refrigerators, washers, etc.)': 'Appliances',
                  'Rope (1 yard/meter = 1 piece)': 'Rope (yard pieces)',
                  'Toys and Beach Accessories': 'Beach Toys/Accessories',
+                 'Balloons or ribbon': 'Balloons',
+                 'Bandaids or bandages': 'Bandaids',
+                 'Beach chairs, toys umbrellas': 'Beach Toys/Accessories',
                  'Footwear (shoes/slippers)': 'Footwear',
+                 'Shoes': 'Footwear',
                  'Disposable lighters': 'Lighters',
                  'Paper Newpapers/ Magazines': 'Newspapers/Magazines',
+                 'Plastic food wrappers (ie chips or candy)': 'Plastic food wrappers',
                  'Polystyrene Foodware (foam)': 'Polystyrene Foodware',
                  'Personal Protective Equipment (masks, gloves)': 'PPE',
                  'Personal Protective Equipment': 'PPE',
@@ -96,7 +126,12 @@ def merge_columns(sos_data):
     df = sos_data.copy()
     # Merge columns
     # Cans
-    _add_cols(df, 'Cans', ['Beverage Cans', 'Beer Cans', 'Soda Cans'])
+    _add_cols(df,
+              'Cans',
+              ['Beverage Cans',
+               'Beer Cans',
+               'Soda Cans',
+               'Metal beverage cans'])
     # Food Containers
     _add_cols(df,
               'Food Containers',
@@ -104,9 +139,12 @@ def merge_columns(sos_data):
                'Food containers (plastic)',
                'Food containers (foam)',
                'Food Containers/ Cups/ Plates/ Bowls',
+               'Paper food containers, cups, plates',
                'Plastic Polystyrene cups/plates/bowls (foam)',
                'Plastic cups, lids/plates/utensils',
-               'Polystyrene Foodware'])
+               'Polystyrene Foodware',
+               'Styrofoam food containers',
+               'Styrofoam Cups, Plates and Bowls '])
     # Beverage Containers
     _add_cols(df,
               'Beverage Containers',
@@ -116,32 +154,43 @@ def merge_columns(sos_data):
     # Bags
     _add_cols(df,
               'Bags',
-              ['Shopping bags', 'Other Plastic Bags', 'Paper Bags'])
+              ['Shopping bags',
+               'Other Plastic Bags',
+               'Paper Bags',
+               'Plastic Bags (grocery, shopping)',
+               'Plastic Bags (trash) ',
+               'Plastic Bags (ziplock, snack)'])
     # Bottle Caps
     _add_cols(df,
               'Bottle Caps',
               ['Bottle Caps',
                'Bottle Caps and Rings',
                'Metal Bottle Caps',
-               'Plastic Bottle Caps and Rings'])  # Not separated by material
+               'Plastic Bottle Caps and Rings',
+               'Metal bottle caps or can pulls'])  # Not separated by material
     # Plastic Bottles
     _add_cols(df,
               'Plastic Bottles',
-              ['Plastic Bottles', 'Other Plastic Bottles (oil, bleach, etc.)'])
+              ['Plastic Bottles',
+               'Other Plastic Bottles (oil, bleach, etc.)',
+               'Plastic motor oil bottles'])
     # Fishing gear
     _add_cols(df,
               'Fishing Gear',
               ['Fishing gear (lures, nets, etc.)',
                'Fishing Lines, Nets, Traps, Ropes, Pots',
+               'Plastic fishing line, nets, lures, floats',
                'Fishing Net & Pieces',
                'Fishing Line (1 yard/meter = 1 piece)',
-               'Fishing Buoys, Pots & Traps'])
+               'Fishing Buoys, Pots & Traps',
+               'Metal fishing hooks or lures'])
     # Smoking, tobacco
     _add_cols(df,
               'Smoking/Tobacco',
               ['Smoking, tobacco (not e-waste or butts)',
                'Tobacco Packaging/Wrap',
-               'Smoking, tobacco, vape items (not butts)'])
+               'Smoking, tobacco, vape items (not butts)',
+               'Cigarette box or wrappers'])
     # Personal hygiene
     _add_cols(df,
               'Personal Hygiene',
@@ -157,7 +206,7 @@ def merge_columns(sos_data):
               ['Foam packaging',
                'Other Plastic/Foam Packaging',
                'Other Packaging (Clean Swell)',  # Assuming this is plastic
-               ])
+               'Styrofoam peanuts or packing materials'])
     # Cardboard
     _add_cols(df,
               'Cardboard',
@@ -165,7 +214,11 @@ def merge_columns(sos_data):
     # Add plastic and foam pieces
     _add_cols(df,
               'Plastic Pieces',
-              ['Plastic Pieces', 'Polystyrene Pieces', 'Foam Dock Pieces'])
+              ['Plastic Pieces',
+               'Polystyrene Pieces',
+               'Foam Dock Pieces',
+               'Styrofoam pieces',
+               'Foam pieces'])
     # E-waste
     _add_cols(df,
               'E-Waste',
@@ -183,7 +236,8 @@ def merge_columns(sos_data):
               ['Other, small',
                'Other Plastics Waste',
                'Other waste (metal, paper, etc.)',
-               'Other Trash (Clean Swell)']
+               'Other Trash (Clean Swell)'
+               'Other Sum']
               )
     return df
 

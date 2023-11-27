@@ -10,7 +10,7 @@ def circle_packing_graph(df, color_scale=None):
     """
     Plot circle packing graph of cleanup items using the circlify package
 
-    :param pd.DataFrame df: SOS dataframed (cleaned)
+    :param pd.DataFrame df: Cleaned SOS data
     :param str/None color_scale: Plotly colorscale, see https://plotly.com/python/builtin-colorscales/
     :return go.Figure fig: Plotly circle packing figure
     """

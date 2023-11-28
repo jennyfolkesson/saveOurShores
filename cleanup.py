@@ -38,7 +38,8 @@ def orient_data(sos_data):
         sos_data = sos_data.set_index(col_names[0]).rename_axis(None)
         sos_data = sos_data.T
         # Drop NaN columns
-        sos_data.drop([np.nan], axis=1, inplace=True)
+        if sos_data.columns.isna().any():
+            sos_data.drop([np.nan], axis=1, inplace=True)
         # Drop NaN rows
         sos_data = sos_data.dropna(how='all')
         # Sum all 'Other:' items so we don't have hundreds of columns
@@ -84,6 +85,7 @@ def rename_data(sos_data):
                  'Glass Pieces and Chunks': 'Glass Pieces',
                  'Pieces and Chunks': 'Glass Pieces',  # 2022 has pieces and chunks, are they glass?
                  'Disposable lighters': 'Lighters',
+                 'Disposable cigarette lighters': 'Lighters',
                  'Paper Newpapers/ Magazines': 'Newspapers/Magazines',
                  'Other Plastic/ Foam Packaging': 'Other Plastic/Foam Packaging',
                  'Plastic food wrappers (ie chips or candy)': 'Plastic food wrappers',
@@ -112,6 +114,8 @@ def read_sheet(file_path):
     # All datasets must contain date and site (this also removes any summary)
     sos_data.dropna(subset=['Cleanup Site', 'Date'], inplace=True)
     sos_data = sos_data.reset_index(drop=True)
+    # Treat NaN values as zeros for now
+    sos_data.fillna(0, inplace=True)
     return sos_data
 
 
@@ -130,7 +134,7 @@ def _add_cols(sos_data, target_col, source_cols):
     for source_col in source_cols:
         if source_col in existing_cols:
             if target_col != source_col and sos_data[source_col].dtype != 'O':
-                sos_data[target_col] += sos_data.fillna(0)[source_col]
+                sos_data[target_col] += sos_data[source_col]
                 sos_data.drop([source_col], axis=1, inplace=True)
         else:
             print("{} not in data frame".format(source_col))
@@ -156,12 +160,6 @@ def merge_columns(sos_data):
     df = sos_data.copy()
     # Merge columns
 
-    # Beverage Containers
-    _add_cols(df,
-              'Beverage Containers',
-              ['Cups, Plates (Paper)',
-               'Cups, Plates (Plastic)',
-               'Cups, Plates (Foam)'])
     # Bags
     _add_cols(df,
               'Bags',
@@ -170,7 +168,8 @@ def merge_columns(sos_data):
                'Paper Bags',
                'Plastic Bags (grocery, shopping)',
                'Plastic Bags (trash) ',
-               'Plastic Bags (ziplock, snack)'])
+               'Plastic Bags (ziplock, snack)',
+               'Grocery Bags (Plastic)'])
     # Bottle Caps
     _add_cols(df,
               'Bottle Caps',
@@ -178,7 +177,9 @@ def merge_columns(sos_data):
                'Bottle Caps and Rings',
                'Metal Bottle Caps',
                'Plastic Bottle Caps and Rings',
-               'Metal bottle caps or can pulls'])  # Not separated by material
+               'Metal bottle caps or can pulls',
+               'Bottle Caps (Plastic)',
+               'Bottle Caps (Metal)'])  # Not separated by material
     # Cardboard
     _add_cols(df,
               'Cardboard',
@@ -205,7 +206,8 @@ def merge_columns(sos_data):
                'Fishing Net & Pieces',
                'Fishing Line (1 yard/meter = 1 piece)',
                'Fishing Buoys, Pots & Traps',
-               'Metal fishing hooks or lures'])
+               'Metal fishing hooks or lures',
+               'Crab pots'])
     # Food Containers
     _add_cols(df,
               'Food Containers',
@@ -220,7 +222,15 @@ def merge_columns(sos_data):
                'Plastic cups, lids/plates/utensils',
                'Polystyrene Foodware',
                'Styrofoam food containers',
-               'Styrofoam Cups, Plates and Bowls '])
+               'Styrofoam Cups, Plates and Bowls ',
+               'Cups, Plates (Paper)',
+               'Cups, Plates (Plastic)',
+               'Cups, Plates (Foam)',
+               'Cups & Plates (Paper)',
+               'Cups & Plates (Plastic)',
+               'Cups & Plates (Foam)',
+               'Plastic cups, lids, plates, utensils',
+               ])
     # Personal hygiene
     _add_cols(df,
               'Personal Hygiene',
@@ -228,7 +238,9 @@ def merge_columns(sos_data):
                'Condoms',
                'Diapers',
                'Tampons/Tampon Applicators',
+               'Tampons/Applicators',
                'Cotton Bud Sticks (swabs)',
+               'Feminine Products',
                'Feminine Hygeine Products'])
     # Packaging
     _add_cols(df,
@@ -242,7 +254,9 @@ def merge_columns(sos_data):
               'Plastic Bottles',
               ['Plastic Bottles',
                'Other Plastic Bottles (oil, bleach, etc.)',
-               'Plastic motor oil bottles'])
+               'Plastic motor oil bottles',
+               'Other Plastic Bottles',
+               'Beverage Bottles (Plastic)'])
     # Plastic and foam pieces
     _add_cols(df,
               'Plastic Pieces',
@@ -257,7 +271,9 @@ def merge_columns(sos_data):
               ['Plastic To-Go Items',
                'Plastic Polystyrene food "to-go" containers',
                'Take Out/Away Containers (Foam)',
-               'Take Out/Away Containers (Plastic)'])
+               'Take Out/Away Containers (Plastic)',
+               'Take Out/Away (Plastic',
+               'Take Out/Away (Foam)'])
     # Smoking, tobacco
     _add_cols(df,
               'Smoking/Tobacco',
@@ -266,6 +282,11 @@ def merge_columns(sos_data):
                'Smoking, tobacco, vape items (not butts)',
                'Cigarette box or wrappers',
                'Other tobacco (packaging, lighter, etc.)'])
+    # Straws
+    _add_cols(df,
+              'Straws/Stirrers',
+              ['Straws and stirrers',
+               'Plastic straws or stirrers'])
     # Other
     _add_cols(df,
               'Other',
@@ -278,6 +299,19 @@ def merge_columns(sos_data):
     return df
 
 
+def _rename_site(sos_data, site_name, site_key):
+    """
+    Helper function that renames sites to commonly used names
+
+    :param pd.Dataframe sos_data: Data
+    :param str site_name: Final site name given key substring
+    :param str site_key: Any site containing this substring will be
+        renamed to site_name
+    """
+    sos_data['Cleanup Site'] = sos_data['Cleanup Site'].apply(
+        lambda s: site_name if s.find(site_key) >= 0 else s)
+
+
 def merge_sites(sos_data):
     """
     Standardizing cleanup site names, so each site has its own name that
@@ -285,40 +319,48 @@ def merge_sites(sos_data):
 
     :param pd.DataFrame sos_data: Dataframe processed with the merge_columns function
     """
+    # First remove leading and trailing spaces
+    sos_data['Cleanup Site'] = sos_data['Cleanup Site'].apply(
+        lambda s: s.strip())
+    # Apply some renaming (might have to be checked)
+    _rename_site(sos_data, 'Bonny Doon Beach', 'Bonny Doon')
+    _rename_site(sos_data, 'Carmel Meadows', 'Carmel Meadows')
+    _rename_site(sos_data, 'Corcoran Lagoon', 'Corcoran Lagoon')
+    _rename_site(sos_data, 'Cowell/Main Beach', 'Cowell')
+    _rename_site(sos_data, 'Del Monte Beach', 'Del Monte')
+    _rename_site(sos_data, 'Elkhorn Slough', 'Elkhorn Slough')
+    _rename_site(sos_data, 'Lighthouse Field State Beach', 'Lighthouse')
+    _rename_site(sos_data, 'Marina State Beach', 'Marina State')
+    _rename_site(sos_data, 'Monterey State Beach', 'Monterey State')
+    _rename_site(sos_data, 'New Brighton State Beach', 'New Brighton')
+    _rename_site(sos_data, 'Panther State Beach', 'Panther')
+    _rename_site(sos_data, 'Palm State Beach', 'Palm')
+    _rename_site(sos_data, 'SLR @ The Tannery Arts Center', 'Tannery')
+    _rename_site(sos_data, 'Twin Lakes State Beach', 'Twin Lakes')
+
+    # Compiled list of site name variations
     row_names = {'Three-Mile State Beach': '3-Mile State Beach',
                  '4 Mile Beach': '4-Mile State Beach',
+                 'Four Mile Beach': '4-Mile State Beach',
                  'Beer Can Beach (also known as Dolphin/Sumner Beach)': 'Beer Can Beach',
-                 'Carmel Meadows Beach': 'Carmel Meadows',
-                 'Carmel Meadows State Beach': 'Carmel Meadows',
+                 "Black's Beach": 'Blacks Beach',
                  'Capitola City Beach': 'Capitola Beach',
-                 'Corcoran': 'Corcoran Lagoon',
-                 'Corcoran Beach':'Corcoran Lagoon',
                  '20th Ave Beach & Corcoran Lagoon': 'Corcoran Lagoon @ 20th Ave',
-                 'Cowell Beach': 'Cowell/Main Beach',
-                 'Cowell/ Main Beach': 'Cowell/Main Beach',
-                 'Cowell and Main Beach': 'Cowell/Main Beach',
+                 'Coewll and Main Beach': 'Cowell/Main Beach',
                  'Davenport Main Beach': 'Davenport Landing Beach',
-                 'Del Monte Beach at Wharf II': 'Del Monte Beach at Wharf 2',
-                 'Del Monte Wharf 2': 'Del Monte Beach at Wharf 2',
-                 'Del Monte Beach - Wharf II': 'Del Monte Beach at Wharf 2',
-                 'Del Monte State Beach/ Wharf II': 'Del Monte Beach at Wharf 2',
-                 'Elkhorn Slough @ Moss Landing (Monterey Bay Kayaks)':  'Elkhorn Slough Reserve',
+                 'Elkhorn Slough @ Moss Landing (Monterey Bay Kayaks)':  'Elkhorn Slough',
                  'Ford Ord Dunes State Beach': 'Fort Ord Dunes State Beach',
                  'Ft. Ord Dunes State Park': 'Fort Ord Dunes State Beach',
-                 "It's Beach/Lighthouse Field State Beach": 'Lighthouse Field State Beach',
-                 "It's Beach/Lighthouse":  'Lighthouse Field State Beach',
-                 'Lighthouse Field':  'Lighthouse Field State Beach',
+                 'Hidden Beach Park': 'Hidden Beach',
                  'Marina State Beach at Reservation Rd': 'Marina State Beach',
                  "Mitchell's Cove Beach": "Mitchell's Cove",
-                 'Monterey State Beach (North of Best Western)': 'Monterey State Beach',
-                 'Monterey State Beach/Tides Hotel': 'Monterey State Beach',
-                 'New Brighton Beach State Park': 'New Brighton State Beach',
                  'Natural Bridges': 'Natural Bridges State Beach',
                  'North Del Monte/Tide Avenue/Casa Verde Beach': 'North Del Monte Tide Ave',
-                 'Palm Beach State Park': 'Palm State Beach',
+                 'North Ano Nuevo & Cascade Creek': 'North Ano Nuevo/Cascade Creek',
+                 'North Ano Nuevo/ Cascade Creek': 'North Ano Nuevo/Cascade Creek',
                  'Rio Del Mar': 'Rio Del Mar State Beach',
                  'San Lorenzo River at Felker St. (HWY 1 overpass) to Soquel Ave': 'SLR @ Felker to Soquel',
-                 'SLR @ Felton Covered Bridge ': 'SLR @ Felton',
+                 'SLR @ Felton Covered Bridge': 'SLR @ Felton',
                  'SLR @ Felton Covered Bridge (DT Felton, New Leaf, Cremer House, to Felton Covered Bridge Park)': 'SLR @ Felton',
                  'SLR at Laurel St. Bridge':  'SLR @ Laurel St',
                  'San Lorenzo R. @ Laurel St to Riverside Ave':  'SLR @ Laurel St to Riverside Ave',
@@ -326,15 +368,10 @@ def merge_sites(sos_data):
                  'SLR at Riverside Ave.':  'SLR @ Riverside Ave.',
                  'SLR at Soquel St. Bridge':  'SLR @ Soquel St. Bridge',
                  'San Lorenzo River (Soquel bridge to Riverside bridge)':  'SLR @ Soquel St. to Riverside',
+                 'SLR @ Laurel Street Bridge to Riverside Ave':  'SLR @ Soquel St. to Riverside',
                  'SLR Cleanup @ Soquel Ave to Laurel St.': 'SLR @ Soquel Ave to Laurel St.',
                  'San Lorenzo R. @ Soquel Ave to Laurel St': 'SLR @ Soquel Ave to Laurel St.',
-                 'SLR @ Tannery ': 'SLR @ The Tannery Arts Center',
-                 'SLR at Tannery': 'SLR @ The Tannery Arts Center',
-                 'San Lorenzo River @ The Tannery Arts Center': 'SLR @ The Tannery Arts Center',
-                 'San Lorenzo River, The Tannery': 'SLR @ The Tannery Arts Center',
-                 'SLR @ Tannery Arts': 'SLR @ The Tannery Arts Center',
-                 'San Lorenzo River @ Tannery': 'SLR @ The Tannery Arts Center',
-                 'San Lorenzo R. @ The Tannery': 'SLR @ The Tannery Arts Center',
+                 'SLR: Soquel to Laurel/Broadway': 'SLR @ Soquel Ave to Laurel St.',
                  'San Lorenzo R. @ Water St to Soquel Ave': 'SLR @ Water St to Soquel Ave',
                  'SLR @ Water St to Soquel': 'SLR @ Water St to Soquel Ave',
                  'SLR: Water St. Bridge to Soquel': 'SLR @ Water St to Soquel Ave',
@@ -343,15 +380,15 @@ def merge_sites(sos_data):
                  'Sand City Beach at West Bay St.': 'Sand City Beach',
                  'Shark Fin Cove': 'Shark Fin Cove State Beach',
                  'Seacliff': 'Seacliff State Beach',
-                 'Seacliff ': 'Seacliff State Beach',
-                 'Sunset State Beach ': 'Sunset State Beach',
+                 'Sunny Cove': 'Sunny Cove Beach',
+                 'Sunset Beach': 'Sunset State Beach',
                  }
 
-    df = sos_data.set_index('Cleanup Site').rename_axis(None)
-    df.rename(index=row_names, inplace=True)
-    df['Cleanup Site'] = df.index
-    df.reset_index(drop=True)
-    return df
+    sos_data = sos_data.set_index('Cleanup Site').rename_axis(None)
+    sos_data.rename(index=row_names, inplace=True)
+    sos_data['Cleanup Site'] = sos_data.index
+    sos_data = sos_data.reset_index(drop=True)
+    return sos_data
 
 
 def merge_data(data_dir):

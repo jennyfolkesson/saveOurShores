@@ -1,4 +1,5 @@
 import argparse
+import glob
 import os
 import numpy as np
 import pandas as pd
@@ -35,6 +36,11 @@ def orient_data(sos_data):
     # Check if table axes are flipped (items should be in columns)
     nbr_unknowns = [col for col in col_names if isinstance(col, str) and 'Unnamed' in col]
     if len(nbr_unknowns) > 0:
+        # Some random stuff are sometimes placed as separate rows one empty row as separator
+        nan_idxs = sos_data.loc[pd.isna(sos_data[col_names[0]]), :].index
+        if len(nan_idxs) > 1:
+            sos_data.loc[nan_idxs[1], col_names[0]] = 'Other:'
+        # Set index to be totals before transposing
         sos_data = sos_data.set_index(col_names[0]).rename_axis(None)
         sos_data = sos_data.T
         # Drop NaN columns
@@ -44,10 +50,16 @@ def orient_data(sos_data):
         sos_data = sos_data.dropna(how='all')
         # Sum all 'Other:' items so we don't have hundreds of columns
         col_names = list(sos_data)
+        other_idx = -1
         if 'Other:' in col_names:
             other_idx = sos_data.columns.get_loc('Other:')
-            sos_data['Other Sum'] = sos_data[col_names[other_idx:]].sum(axis=1)
-            # Drop the columns whos values have been summed in 'Other Sum'
+        # Very special case, generalize later if problem reappears
+        elif 'Other 1- Wine Cork' in col_names:
+            other_idx = sos_data.columns.get_loc('Other 1- Wine Cork')
+        if other_idx > -1:
+            sos_data['Other Sum'] = (
+                sos_data[col_names[other_idx:]].sum(axis=1, numeric_only=True))
+            # Drop the columns whose values have been summed in 'Other Sum'
             sos_data.drop(col_names[other_idx:], axis=1, inplace=True)
     return sos_data
 
@@ -136,8 +148,6 @@ def _add_cols(sos_data, target_col, source_cols):
             if target_col != source_col and sos_data[source_col].dtype != 'O':
                 sos_data[target_col] += sos_data[source_col]
                 sos_data.drop([source_col], axis=1, inplace=True)
-        else:
-            print("{} not in data frame".format(source_col))
 
 
 def merge_columns(sos_data):
@@ -162,10 +172,9 @@ def merge_columns(sos_data):
 
     # Bags
     _add_cols(df,
-              'Bags',
+              'Plastic Bags',
               ['Shopping bags',
                'Other Plastic Bags',
-               'Paper Bags',
                'Plastic Bags (grocery, shopping)',
                'Plastic Bags (trash) ',
                'Plastic Bags (ziplock, snack)',
@@ -182,8 +191,12 @@ def merge_columns(sos_data):
                'Bottle Caps (Metal)'])  # Not separated by material
     # Cardboard
     _add_cols(df,
-              'Cardboard',
-              ['Cardboard', 'Paper Cardboard'])
+              'Paper/Cardboard',
+              ['Cardboard',
+               'Paper Cardboard',
+               'Paper bags',
+               'Paper Bags',
+               'Cardboard, newspapers, magazines'])
     # Cans
     _add_cols(df,
               'Cans',
@@ -207,6 +220,7 @@ def merge_columns(sos_data):
                'Fishing Line (1 yard/meter = 1 piece)',
                'Fishing Buoys, Pots & Traps',
                'Metal fishing hooks or lures',
+               'Styrofoam buoys or floats',
                'Crab pots'])
     # Food Containers
     _add_cols(df,
@@ -339,8 +353,10 @@ def merge_sites(sos_data):
     _rename_site(sos_data, 'Twin Lakes State Beach', 'Twin Lakes')
 
     # Compiled list of site name variations
-    row_names = {'Three-Mile State Beach': '3-Mile State Beach',
+    row_names = {'3 Mile Beach': '3-Mile State Beach',
+                 'Three-Mile State Beach': '3-Mile State Beach',
                  '4 Mile Beach': '4-Mile State Beach',
+                 '4 Mile State Beach': '4-Mile State Beach',
                  'Four Mile Beach': '4-Mile State Beach',
                  'Beer Can Beach (also known as Dolphin/Sumner Beach)': 'Beer Can Beach',
                  "Black's Beach": 'Blacks Beach',
@@ -392,21 +408,39 @@ def merge_sites(sos_data):
 
 
 def merge_data(data_dir):
-    file_names = os.listdir(data_dir)
+    file_paths = glob.glob(os.path.join(data_dir, '*.xlsx'))
     merged_data = None
-    for file_name in file_names:
-        file_path = os.path.join(data_dir, file_name)
+    for file_path in file_paths:
+        print("Current file: ", file_path)
         sos_data = read_sheet(file_path)
+        # TODO: check with SOS if columns are acceptable
         sos_data = merge_columns(sos_data)
+        # TODO: will need to further consolidate site names
+        # TODO: separate site names and lat, lon coordinates
         sos_data = merge_sites(sos_data)
+        print('------')
+        print(sos_data.index.value_counts())
+        print(len(sos_data.index), len(sos_data.index.unique()))
+        sos_data.to_csv(os.path.join(args.dir, "temp_sos_data.csv"))
         if merged_data is None:
             merged_data = sos_data
         else:
-            merged_data = pd.concat([merged_data, sos_data], axis=0, ignore_index=True)
+            print(merged_data.index.value_counts())
+            print(len(merged_data.index), len(merged_data.index.unique()))
+            merged_data = pd.concat(
+                [merged_data, sos_data],
+                axis=0,
+                ignore_index=True,
+            )
+            merged_data.to_csv(os.path.join(args.dir, "merged_sos_data.csv"))
+            print(len(merged_data.index))
+
+    # Sort by date
+    merged_data.sort_values(by='Date', inplace=True)
     return merged_data
 
 
 if __name__ == '__main__':
     args = parse_args()
-    merged_df = merge_data(args.dir)
-    merged_df.to_csv(os.path.join(args.dir, "merged_sos_data.csv"))
+    merged_data = merge_data(args.dir)
+    merged_data.to_csv(os.path.join(args.dir, "merged_sos_data.csv"))

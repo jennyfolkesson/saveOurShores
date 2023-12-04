@@ -6,6 +6,24 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 
+def _sum_items(df):
+    df.drop(['Date',
+                  'Data Collection',
+                  'Duration (Hrs)',
+                  'County/City',
+                  'Cleanup Site',
+                  'Cleaned Size (Sq Miles)',
+                  'Adult Volunteers',
+                  'Youth Volunteers',
+                  'Pounds Of Trash',
+                  'Pounds Of Recycling',
+                  'Type Of Cleanup'], axis=1, inplace=True)
+
+    # Compute total of columns
+    col_sum = df.sum(axis=0, numeric_only=True)
+    return col_sum
+
+
 def circle_packing_graph(df, color_scale=None):
     """
     Plot circle packing graph of cleanup items using the circlify package
@@ -18,18 +36,8 @@ def circle_packing_graph(df, color_scale=None):
         color_scale = 'BuPu'
 
     df_circ = df.copy()
-    # Remove all columns that are not cleanup items
-    df_circ.drop(['Date',
-                  'Duration (hrs)',
-                  'County/City',
-                  'Cleanup Site',
-                  'Adult Volunteers',
-                  'Youth Volunteers',
-                  'Pounds of Trash',
-                  'Pounds of Recycling'], axis=1, inplace=True)
-
     # Compute total of columns
-    col_sum = df_circ.sum(axis=0, numeric_only=True)
+    col_sum = _sum_items(df_circ)
     # Sort values, circlify wants values sorted in descending order
     col_sum = col_sum.sort_values(ascending=False)
 
@@ -90,5 +98,30 @@ def circle_packing_graph(df, color_scale=None):
         autosize=False,
         width=1100,
         height=1100,
+    )
+    return fig
+
+
+def treemap_graph(df, color_scale=None):
+
+    if color_scale is None:
+        color_scale = 'BuPu'
+
+    df_circ = df.copy()
+    # Compute total of columns
+    col_sum = _sum_items(df_circ)
+
+    df_sum = pd.DataFrame({'Item': col_sum.index, 'Quantity': col_sum.values})
+
+    fig = px.treemap(df_sum, path=[px.Constant('Cleanup Numbers'), 'Item'],
+                     values='Quantity',
+                     names='Item',
+                     color='Quantity',
+                     color_continuous_scale=color_scale,
+                     )
+    fig.update_layout(
+        autosize=False,
+        width=1100,
+        height=800,
     )
     return fig

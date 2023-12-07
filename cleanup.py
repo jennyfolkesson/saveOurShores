@@ -6,6 +6,19 @@ import numpy as np
 import pandas as pd
 
 
+NONNUMERIC_COLS = ['Date',
+                   'Data Collection',
+                   'Duration (Hrs)',
+                   'County/City',
+                   'Cleanup Site',
+                   'Cleaned Size (Sq Miles)',
+                   'Adult Volunteers',
+                   'Youth Volunteers',
+                   'Pounds Of Trash',
+                   'Pounds Of Recycling',
+                   'Type Of Cleanup']
+
+
 def parse_args():
     """
     Parse command line arguments
@@ -20,6 +33,30 @@ def parse_args():
         help='Path to directory containing SOS xlsx files',
     )
     return parser.parse_args()
+
+
+def sum_items(df, col_sum=True):
+    df_sum = df.copy()
+    df_sum.drop(NONNUMERIC_COLS, axis=1, inplace=True)
+    # Compute total of columns
+    if col_sum:
+        df_sum = df_sum.sum(axis=0, numeric_only=True)
+    else:
+        df_sum = df_sum.sum(axis=1, numeric_only=True)
+    return df_sum
+
+
+def make_numeric_cols_numeric_again(sos_data):
+    df = sos_data.copy()
+    for col in NONNUMERIC_COLS:
+        if col not in df.columns:
+            df[col] = np.nan
+    df_nonnumeric = df[NONNUMERIC_COLS]
+    df.drop(NONNUMERIC_COLS, axis=1, inplace=True)
+    for col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    df = pd.concat([df_nonnumeric, df], axis=1)
+    return df
 
 
 def orient_data(sos_data):
@@ -58,8 +95,9 @@ def orient_data(sos_data):
         elif 'Other 1- Wine Cork' in col_names:
             other_idx = sos_data.columns.get_loc('Other 1- Wine Cork')
         if other_idx > -1:
+            other_data = sos_data[col_names[other_idx:]].fillna(0)
             sos_data['Other Sum'] = (
-                sos_data[col_names[other_idx:]].sum(axis=1, numeric_only=True))
+                other_data.sum(axis=1, numeric_only=True))
             # Drop the columns whose values have been summed in 'Other Sum'
             sos_data.drop(col_names[other_idx:], axis=1, inplace=True)
     return sos_data
@@ -348,17 +386,25 @@ def merge_columns(sos_data):
     return df
 
 
-def _rename_site(sos_data, site_name, site_key):
+def _rename_site(sos_data, site_name, site_keys):
     """
     Helper function that renames sites to commonly used names
 
     :param pd.Dataframe sos_data: Data
     :param str site_name: Final site name given key substring
-    :param str site_key: Any site containing this substring will be
+    :param list site_key: Any site containing this substring will be
         renamed to site_name
     """
+    if isinstance(site_keys, str):
+        site_keys = [site_keys]
+    for site_key in site_keys:
+        sos_data['Cleanup Site'] = sos_data['Cleanup Site'].apply(
+            lambda s: site_name if s.find(site_key) >= 0 else s)
+
+
+def _replace_name(sos_data, old_str, new_str):
     sos_data['Cleanup Site'] = sos_data['Cleanup Site'].apply(
-        lambda s: site_name if s.find(site_key) >= 0 else s)
+        lambda s: str(s).replace(old_str, new_str))
 
 
 def merge_sites(sos_data):
@@ -371,74 +417,118 @@ def merge_sites(sos_data):
     # First remove leading and trailing spaces
     sos_data['Cleanup Site'] = sos_data['Cleanup Site'].apply(
         lambda s: s.strip())
+    # Capitalize names
+    sos_data['Cleanup Site'] = sos_data['Cleanup Site'].apply(
+        lambda s: str(s).title())
+    # Remove . in strings
+    _replace_name(sos_data, ".", "")
+    _replace_name(sos_data, " To ", " - ")
+    # Remove St and Ave
+    _replace_name(sos_data, " Street", "")
+    _replace_name(sos_data, " Ave", "")
+    # Call San Lorenzo River 'SLR'
+    _replace_name(sos_data, "Slr", "SLR")
+    _replace_name(sos_data, 'Sl River -', 'SLR @')
+    _replace_name(sos_data, "San Lorenzo River", "SLR")
+    _replace_name(sos_data, "San Lorenzo R", "SLR")
+    _replace_name(sos_data, "SLR:", "SLR @")
+    _replace_name(sos_data, "SLR-", "SLR @")
+    _replace_name(sos_data, "SLR At", "SLR @")
+    _replace_name(sos_data, 'SLR -', "SLR @")
+    _replace_name(sos_data, 'SLR Cleanup', 'SLR')
+
     # Apply some renaming (might have to be checked)
+    _rename_site(sos_data, '3-Mile State Beach',
+                 ['3 Mile', '3-Mile', 'Three Mile'])
+    _rename_site(sos_data, '4-Mile State Beach',
+                 ['4 Mile', '4-Mile', 'Four Mile'])
+    _rename_site(sos_data, 'Aptos Creek', 'Aptos')
+    _rename_site(sos_data, 'Arroyo Seco', 'Arroyo Seco')
+    _rename_site(sos_data, 'Beer Can Beach', ['Beer Can', 'Beercan'])
+    _rename_site(sos_data, 'Blacks Beach', 'Black')
     _rename_site(sos_data, 'Bonny Doon Beach', 'Bonny Doon')
-    _rename_site(sos_data, 'Carmel Meadows', 'Carmel Meadows')
-    _rename_site(sos_data, 'Corcoran Lagoon', 'Corcoran Lagoon')
-    _rename_site(sos_data, 'Cowell/Main Beach', 'Cowell')
+    _rename_site(sos_data, 'Capitola', 'Capitola')
+    _rename_site(sos_data, 'Carmel', 'Carmel')
+    _rename_site(sos_data, 'Corcoran Lagoon',
+                 ['Corcoran', 'Corcoron'])
+    _rename_site(sos_data, 'Coyote Creek', 'Coyote Creek')
+    _rename_site(sos_data, 'Cowell/Main Beach',
+                 ['Cowell', 'Coewll', 'Santa Cruz Main Beach'])
+    _rename_site(sos_data, 'Davenport Landing', 'Davenport')
     _rename_site(sos_data, 'Del Monte Beach', 'Del Monte')
     _rename_site(sos_data, 'Elkhorn Slough', 'Elkhorn Slough')
-    _rename_site(sos_data, 'Lighthouse Field State Beach', 'Lighthouse')
+    _rename_site(sos_data, "Fisherman's Wharf", 'Fisherman')
+    _rename_site(sos_data, 'Fort Ord Dunes State Beach',
+                 ['Fort Ord', 'Ft. Ord', 'Ford Ord'])
+    _rename_site(sos_data, 'Greyhound Rock Beach', 'Greyhound')
+    _rename_site(sos_data, 'Hidden Beach', 'Hidden Beach')
+    _rename_site(sos_data, 'Laguna Grande', 'Laguna')
+    _rename_site(sos_data, 'Lighthouse Field State Beach',
+                 ['Lighthouse', 'Its Beach', "It'S Beach"])
+    _rename_site(sos_data, 'Lompico Creek', 'Lompico Creek')
+    _rename_site(sos_data, "Lover's Point", 'Lover')
+    _rename_site(sos_data,'Manresa State Beach',
+                 ['Manresa', 'Manressa'])
     _rename_site(sos_data, 'Marina State Beach', 'Marina State')
+    _rename_site(sos_data, 'McAbee State Beach', ['McAbee', 'Mcabee'])
+    _rename_site(sos_data, "Mitchell's Cove", "Mitchell'S Cove")
+    _rename_site(sos_data, 'Monterey Bay Photo St.', 'Monterey Bay Photo')
     _rename_site(sos_data, 'Monterey State Beach', 'Monterey State')
+    _rename_site(sos_data,  'Moss Landing',  'Moss Landing')
+    _rename_site(sos_data, 'Natural Bridges State Beach', 'Natural Bridges')
     _rename_site(sos_data, 'New Brighton State Beach', 'New Brighton')
+    _rename_site(sos_data, 'Ano Nuevo', 'Ano Nuevo')
+    _rename_site(sos_data, 'North Del Monte', 'North Del Monte')
+    _rename_site(sos_data, 'Pajaro River', 'Pajaro River')
     _rename_site(sos_data, 'Panther State Beach', 'Panther')
     _rename_site(sos_data, 'Palm State Beach', 'Palm')
-    _rename_site(sos_data, 'SLR @ The Tannery Arts Center', 'Tannery')
+    _rename_site(sos_data, 'Pleasure Point', 'Pleasure Point')
+    _rename_site(sos_data,  'Point Lobos State Natural Reserve', 'Point Lobos')
+    _rename_site(sos_data, 'Rio Del Mar State Beach', 'Rio Del Mar')
+    _rename_site(sos_data, 'Salinas River State Beach', 'Salinas')
+    _rename_site(sos_data, 'San Carlos Beach', 'San Carlos')
+    _rename_site(sos_data, 'Sand City Beach', 'Sand City')
+    _rename_site(sos_data, 'Santa Cruz Harbor', 'Santa Cruz Harbor')
+    _rename_site(sos_data, 'Santa Cruz Wharf',
+                 ['Santa Cruz Wharf', 'Santa Cruz Municipal Wharf', 'Sc Wharf'])
+    _rename_site(sos_data, 'Seabright State Beach', 'Seabright')
+    _rename_site(sos_data, 'Seacliff State Beach', 'Seacliff')
+    _rename_site(sos_data, 'Seascape Beach', 'Seascape')
+    _rename_site(sos_data, "Scott's Creek Beach", ['Scott'])
+    _rename_site(sos_data, 'Shark Fin Cove State Beach', 'Shark Fin')
+    _rename_site(sos_data, 'Shark Tooth Beach',
+                 ['Shark Tooth', 'Sharks Tooth'])
+    _rename_site(sos_data, 'Sunny Cove Beach', 'Sunny Cove')
+    _rename_site(sos_data, 'Sunset State Beach', 'Sunset')
     _rename_site(sos_data, 'Twin Lakes State Beach', 'Twin Lakes')
+    _rename_site(sos_data, 'Waddell Creek State Beach',
+                 ['Waddell', 'Wadell'])
+    _rename_site(sos_data, 'Watsonville Slough', 'Watsonville Slough')
+    _rename_site(sos_data, 'West Struve Slough', 'West Struve Slough')
+    _rename_site(sos_data, 'Woodrow State Beach', 'Woodrow')
+    _rename_site(sos_data, 'Zmudowski State Beach', ['Zmudowski', 'Zumdowski'])
+    # For simplicity, report start location of SLR cleanups
+    _rename_site(sos_data, 'SLR @ Felton', 'SLR @ Felton')
+    _rename_site(sos_data, 'SLR @ Slv Recycling Center', 'SLR @ Slv Recycling')
+    _rename_site(sos_data, 'SLR @ The Tannery Arts Center', 'Tannery')
+    _rename_site(sos_data, 'SLR @ Felker',
+                 ['SLR @ Felker', 'SLR/Felke', 'San Lorenzo River Levee','SLR Levee'])
+    _rename_site(sos_data, 'SLR @ Fillmore',
+                 ['SLR @ Fillmore', 'SLR @ Filmore'])
+    _rename_site(sos_data, 'SLR @ Hwy 1', 'SLR @ Hwy 1')
+    _rename_site(sos_data, 'SLR @ Laurel', 'SLR @ Laurel')
+    _rename_site(sos_data, 'SLR @ Riverside', 'SLR @ Riverside')
+    _rename_site(sos_data, 'SLR @ Soquel', 'SLR @ Soquel')
+    _rename_site(sos_data, 'SLR @ Water', 'SLR @ Water')
 
     # Compiled list of site name variations
-    row_names = {'3 Mile Beach': '3-Mile State Beach',
-                 'Three-Mile State Beach': '3-Mile State Beach',
-                 '4 Mile Beach': '4-Mile State Beach',
-                 '4 Mile State Beach': '4-Mile State Beach',
-                 'Four Mile Beach': '4-Mile State Beach',
-                 'Beer Can Beach (also known as Dolphin/Sumner Beach)': 'Beer Can Beach',
-                 "Black's Beach": 'Blacks Beach',
-                 'Capitola City Beach': 'Capitola Beach',
-                 '20th Ave Beach & Corcoran Lagoon': 'Corcoran Lagoon @ 20th Ave',
-                 'Coewll and Main Beach': 'Cowell/Main Beach',
-                 'Davenport Main Beach': 'Davenport Landing Beach',
-                 'Elkhorn Slough @ Moss Landing (Monterey Bay Kayaks)':  'Elkhorn Slough',
-                 'Ford Ord Dunes State Beach': 'Fort Ord Dunes State Beach',
-                 'Ft. Ord Dunes State Park': 'Fort Ord Dunes State Beach',
-                 'Hidden Beach Park': 'Hidden Beach',
-                 'Marina State Beach at Reservation Rd': 'Marina State Beach',
-                 "Mitchell's Cove Beach": "Mitchell's Cove",
-                 'Natural Bridges': 'Natural Bridges State Beach',
-                 'North Del Monte/Tide Avenue/Casa Verde Beach': 'North Del Monte Tide Ave',
-                 'North Ano Nuevo & Cascade Creek': 'North Ano Nuevo/Cascade Creek',
-                 'North Ano Nuevo/ Cascade Creek': 'North Ano Nuevo/Cascade Creek',
-                 'Rio Del Mar': 'Rio Del Mar State Beach',
-                 'San Lorenzo River at Felker St. (HWY 1 overpass) to Soquel Ave': 'SLR @ Felker to Soquel',
-                 'SLR @ Felton Covered Bridge': 'SLR @ Felton',
-                 'SLR @ Felton Covered Bridge (DT Felton, New Leaf, Cremer House, to Felton Covered Bridge Park)': 'SLR @ Felton',
-                 'SLR at Laurel St. Bridge':  'SLR @ Laurel St',
-                 'San Lorenzo R. @ Laurel St to Riverside Ave':  'SLR @ Laurel St to Riverside Ave',
-                 'San Lorenzo R. @ Riverside Ave to Main Beach':  'SLR @ Riverside Ave to Main Beach',
-                 'SLR at Riverside Ave.':  'SLR @ Riverside Ave.',
-                 'SLR at Soquel St. Bridge':  'SLR @ Soquel St. Bridge',
-                 'San Lorenzo River (Soquel bridge to Riverside bridge)':  'SLR @ Soquel St. to Riverside',
-                 'SLR @ Laurel Street Bridge to Riverside Ave':  'SLR @ Soquel St. to Riverside',
-                 'SLR Cleanup @ Soquel Ave to Laurel St.': 'SLR @ Soquel Ave to Laurel St.',
-                 'San Lorenzo R. @ Soquel Ave to Laurel St': 'SLR @ Soquel Ave to Laurel St.',
-                 'SLR: Soquel to Laurel/Broadway': 'SLR @ Soquel Ave to Laurel St.',
-                 'San Lorenzo R. @ Water St to Soquel Ave': 'SLR @ Water St to Soquel Ave',
-                 'SLR @ Water St to Soquel': 'SLR @ Water St to Soquel Ave',
-                 'SLR: Water St. Bridge to Soquel': 'SLR @ Water St to Soquel Ave',
-                 'Salinas River State Beach at Molera Rd.': 'Salinas River State Beach',
-                 'Salinas River National Wildlife Reuge':  'Salinas River National Wildlife Refuge',
-                 'Sand City Beach at West Bay St.': 'Sand City Beach',
-                 'Shark Fin Cove': 'Shark Fin Cove State Beach',
-                 'Seacliff': 'Seacliff State Beach',
-                 'Sunny Cove': 'Sunny Cove Beach',
-                 'Sunset Beach': 'Sunset State Beach',
-                 }
+    # row_names = {'San Lorenzo River at Felker St. (HWY 1 overpass) to Soquel Ave': 'SLR @ Felker - Soquel',
+    #              'San Lorenzo River @ Laurel to Riverside': 'SLR @ Laurel - Riverside'}
 
-    sos_data = sos_data.set_index('Cleanup Site').rename_axis(None)
-    sos_data.rename(index=row_names, inplace=True)
-    sos_data['Cleanup Site'] = sos_data.index
-    sos_data = sos_data.reset_index(drop=True)
+    # sos_data = sos_data.set_index('Cleanup Site').rename_axis(None)
+    # sos_data.rename(index=row_names, inplace=True)
+    # sos_data['Cleanup Site'] = sos_data.index
+    # sos_data = sos_data.reset_index(drop=True)
     return sos_data
 
 
@@ -452,16 +542,19 @@ def read_sheet(file_path):
     sos_data = pd.read_excel(file_path, na_values=['UNK', 'Unk', '-', '#REF!'])
     sos_data = orient_data(sos_data)
     rename_data(sos_data)
+    # # Treat NaN values as zeros for now
+    # sos_data.fillna(0, inplace=True)
     # Can't have numeric values in cleanup site
-    sos_data['Cleanup Site'].replace(1, np.NaN, inplace=True)
+    sos_data['Cleanup Site'].replace([0, 1], np.NaN, inplace=True)
+    sos_data['Date'].replace(0, np.NaN, inplace=True)
     # All datasets must contain date and site (this also removes any summary)
     sos_data.dropna(subset=['Cleanup Site', 'Date'], inplace=True)
+    # Remove non-numeric values from item columns
+    sos_data = make_numeric_cols_numeric_again(sos_data)
     # All dates must be datetime objects
-    not_date = sos_data.apply(lambda row: not isinstance(row['Date'], datetime.date), axis=1)
-    sos_data.drop(not_date[not_date].index, inplace=True)
+    sos_data['Date'] = pd.to_datetime(sos_data['Date'], errors='coerce')
+    sos_data.dropna(subset=['Date'], inplace=True)
     sos_data = sos_data.reset_index(drop=True)
-    # Treat NaN values as zeros for now
-    sos_data.fillna(0, inplace=True)
     return sos_data
 
 

@@ -5,23 +5,7 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 
-
-def _sum_items(df):
-    df.drop(['Date',
-                  'Data Collection',
-                  'Duration (Hrs)',
-                  'County/City',
-                  'Cleanup Site',
-                  'Cleaned Size (Sq Miles)',
-                  'Adult Volunteers',
-                  'Youth Volunteers',
-                  'Pounds Of Trash',
-                  'Pounds Of Recycling',
-                  'Type Of Cleanup'], axis=1, inplace=True)
-
-    # Compute total of columns
-    col_sum = df.sum(axis=0, numeric_only=True)
-    return col_sum
+import cleanup as cleanup
 
 
 def circle_packing_graph(df, color_scale=None):
@@ -37,9 +21,11 @@ def circle_packing_graph(df, color_scale=None):
 
     df_circ = df.copy()
     # Compute total of columns
-    col_sum = _sum_items(df_circ)
+    col_sum = cleanup.sum_items(df_circ)
     # Sort values, circlify wants values sorted in descending order
     col_sum = col_sum.sort_values(ascending=False)
+    # Remove zeros
+    col_sum = col_sum[col_sum > 0]
 
     # Create a circle packing graph
     # compute circle positions:
@@ -109,7 +95,7 @@ def treemap_graph(df, color_scale=None):
 
     df_circ = df.copy()
     # Compute total of columns
-    col_sum = _sum_items(df_circ)
+    col_sum = cleanup.sum_items(df_circ)
 
     df_sum = pd.DataFrame({'Item': col_sum.index, 'Quantity': col_sum.values})
 

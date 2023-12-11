@@ -8,11 +8,15 @@ import plotly.graph_objects as go
 import cleanup as cleanup
 
 
-def circle_packing_graph(df, color_scale=None):
+def circle_packing_graph(df, min_items=None, color_scale=None):
     """
-    Plot circle packing graph of cleanup items using the circlify package
+    Plot circle packing graph of cleanup items using the circlify package.
+    Item type and number of items will be displayed on graph if there are at least
+    min_items. All item types and corresponding numbers will appear as hover data.
 
     :param pd.DataFrame df: Cleaned SOS data
+    :param int/None min_items: Minimum nbr of items to show text inside circle without hovering
+        If none: use percentages of largest number.
     :param str/None color_scale: Plotly colorscale, see https://plotly.com/python/builtin-colorscales/
     :return go.Figure fig: Plotly circle packing figure
     """
@@ -26,7 +30,9 @@ def circle_packing_graph(df, color_scale=None):
     col_sum = col_sum.sort_values(ascending=False)
     # Remove zeros
     col_sum = col_sum[col_sum > 0]
-
+    # Set a min item if none
+    if min_items is None:
+        min_items = int(col_sum.iloc[0]/100)
     # Create a circle packing graph
     # compute circle positions:
     circles = circlify.circlify(
@@ -36,7 +42,7 @@ def circle_packing_graph(df, color_scale=None):
     )
     # Circlify wants input sorted in descending order, output is ascending??
     circles.reverse()
-
+    # Create figure
     fig = go.Figure()
     fig.data = []
     # Set axes properties
@@ -46,14 +52,12 @@ def circle_packing_graph(df, color_scale=None):
         showgrid=False,
         zeroline=False
     )
-
     fig.update_yaxes(
         range=[-1.05, 1.05],
         showticklabels=False,
         showgrid=False,
         zeroline=False,
     )
-
     # Get some different colors
     plot_colors = plotly.colors.sample_colorscale(color_scale, samplepoints=10, low=0, high=1.0, colortype='rgb')
 
@@ -69,17 +73,27 @@ def circle_packing_graph(df, color_scale=None):
                       line_width=2,
                       )
         nbr_items = int(col_sum.iloc[idx])
+        txt = "{} <br> {}".format(col_sum.index[idx], str(nbr_items))
         # Text gets messy if circle is too small
-        if nbr_items > 100:
-            txt = "{} <br> {}".format(col_sum.index[idx], str(nbr_items))
+        if nbr_items > 7 * min_items or \
+                (nbr_items > min_items and len(txt) < 30):
             fig.add_annotation(
                 x=x,
                 y=y,
                 text=txt,
+                hovertext=txt,
                 showarrow=False,
                 font_size=10,
             )
-
+        else:
+            fig.add_annotation(
+                x=x,
+                y=y,
+                text='',
+                hovertext=txt,
+                showarrow=False,
+                font_size=10,
+            )
     fig.update_layout(
         autosize=False,
         width=1100,

@@ -14,8 +14,8 @@ NONNUMERIC_COLS = ['Date',
                    'Cleaned Size (Sq Miles)',
                    'Adult Volunteers',
                    'Youth Volunteers',
-                   'Pounds Of Trash',
-                   'Pounds Of Recycling',
+                   'Trash (lbs)',
+                   'Recycling (lbs)',
                    'Type Of Cleanup']
 
 
@@ -121,8 +121,10 @@ def rename_data(sos_data):
                  'Data Collection Method': 'Data Collection',
                  'Total Cleanup Duration (Hrs)': 'Duration (Hrs)',
                  '# Of Volunteers': 'Adult Volunteers',
-                 'Pounds Of Trash Collected': 'Pounds Of Trash',
-                 'Pounds Of Recycle Collected': 'Pounds Of Recycling',
+                 'Pounds Of Trash Collected': 'Trash (lbs)',
+                 'Pounds Of Trash': 'Trash (lbs)',
+                 'Pounds Of Recycle Collected': 'Recycling (lbs)',
+                 'Pounds Of Recycling': 'Recycling (lbs)',
                  'County/City Where The Event Was Held?': 'County/City',
                  'County': 'County/City',
                  'City/County': 'County/City',
@@ -130,10 +132,11 @@ def rename_data(sos_data):
                  'Beverage Bottles (Glass)': 'Glass Bottles',
                  'Beverages Sachets/Pouches': 'Beverage Pouches',
                  'Beverages Sachets': 'Beverage Pouches',
-                 'Toys And Beach Accessories': 'Beach Toys/Accessories',
-                 'Beach Chairs, Toys Umbrellas': 'Beach Toys/Accessories',
+                 'Toys And Beach Accessories': 'Beach Accessories',
+                 'Beach Chairs, Toys Umbrellas': 'Beach Accessories',
                  'Balloons Or Ribbon': 'Balloons',
                  'Bandaids Or Bandages': 'Bandaids',
+                 'Bikes Or Bike Parts': 'Bikes',
                  'Clothes, Cloth': 'Clothes/Cloth',
                  'Clothes Or Towels': 'Clothes/Cloth',
                  'Fireworkds': 'Fireworks',
@@ -149,7 +152,6 @@ def rename_data(sos_data):
                  'Rope (1 Yard/Meter = 1 Piece)': 'Rope',
                  'Utensils (Plastic)': 'Utensils',
                  'Forks, Knives, Spoons': 'Utensils',
-                 'Volunteer Hours': 'Duration (Hrs)',
                  'Wood Pallets, Pieces And Processed Wood': 'Wood Pieces',
                  }, inplace=True)
 
@@ -342,7 +344,7 @@ def merge_columns(sos_data):
                'Take Out/Away (Foam)'])
     # Plastic food wrappers
     _add_cols(df,
-              'Plastic Food Wrappers',
+              'Food Wrappers',
               ['Plastic Food Wrappers',
                'Food Wrappers',
                'Food Wrapper',
@@ -353,11 +355,12 @@ def merge_columns(sos_data):
               ['Rope (Yard Pieces)', 'Rope'])
     # Smoking, tobacco
     _add_cols(df,
-              'Smoking/Tobacco',
+              'Tobacco',
               ['Smoking, Tobacco (Not E-Waste Or Butts)',
                'Tobacco Packaging/Wrap',
                'Smoking, Tobacco, Vape Items (Not Butts)',
                'Cigarette Box Or Wrappers',
+               'Cigar Tips',
                'Other Tobacco (Packaging, Lighter, Etc.)'])
     # Straws
     _add_cols(df,
@@ -542,6 +545,11 @@ def read_sheet(file_path):
     sos_data = pd.read_excel(file_path, na_values=['UNK', 'Unk', '-', '#REF!'])
     sos_data = orient_data(sos_data)
     rename_data(sos_data)
+    # Old data has 'Volunteer Hours', which is 'Duration (Hrs)' * 'Adult Volunteers'
+    if 'Volunteer Hours' in sos_data.columns:
+        sos_data['Adult Volunteers'].replace(0, 1, inplace=True)
+        sos_data['Duration (Hrs)'] = sos_data['Volunteer Hours'] / sos_data['Adult Volunteers'].fillna(1)
+        sos_data.drop('Volunteer Hours', axis=1, inplace=True)
     # # Treat NaN values as zeros for now
     # sos_data.fillna(0, inplace=True)
     # Can't have numeric values in cleanup site

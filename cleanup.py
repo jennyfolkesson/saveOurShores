@@ -132,19 +132,18 @@ def rename_data(sos_data):
                  'Beverage Bottles (Glass)': 'Glass Bottles',
                  'Beverages Sachets/Pouches': 'Beverage Pouches',
                  'Beverages Sachets': 'Beverage Pouches',
-                 'Toys And Beach Accessories': 'Beach Accessories',
-                 'Beach Chairs, Toys Umbrellas': 'Beach Accessories',
+                 'Toys And Beach Accessories': 'Beach Gear',
+                 'Beach Chairs, Toys Umbrellas': 'Beach Gear',
                  'Balloons Or Ribbon': 'Balloons',
                  'Bandaids Or Bandages': 'Bandaids',
                  'Bikes Or Bike Parts': 'Bikes',
-                 'Clothes, Cloth': 'Clothes/Cloth',
-                 'Clothes Or Towels': 'Clothes/Cloth',
+                 'Clothes, Cloth': 'Clothes',
+                 'Clothes Or Towels': 'Clothes',
                  'Fireworkds': 'Fireworks',
                  'Footwear (Shoes/Slippers)': 'Footwear',
                  'Shoes': 'Footwear',
                  'Glass Pieces And Chunks': 'Glass Pieces',
                  'Pieces And Chunks': 'Glass Pieces',  # 2022 has pieces and chunks, are they glass?
-                 'Other Plastic/ Foam Packaging': 'Other Plastic/Foam Packaging',
                  'Polystyrene Foodware (Foam)': 'Polystyrene Foodware',
                  'Personal Protective Equipment (Masks, Gloves)': 'PPE',
                  'Personal Protective Equipment': 'PPE',
@@ -314,6 +313,7 @@ def merge_columns(sos_data):
     _add_cols(df,
               'Plastic Packaging',
               ['Foam Packaging',
+               'Other Plastic/ Foam Packaging',
                'Other Plastic/Foam Packaging',
                'Other Packaging (Clean Swell)',  # Assuming this is plastic
                'Styrofoam Peanuts Or Packing Materials'])
@@ -335,7 +335,7 @@ def merge_columns(sos_data):
                'Foam Pieces'])
     # Plastic and foam (merge) to go
     _add_cols(df,
-              'Plastic To-Go Items',
+              'Plastic To-Go',
               ['Plastic To-Go Items',
                'Plastic Polystyrene Food "To-Go" Containers',
                'Take Out/Away Containers (Foam)',

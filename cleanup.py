@@ -415,6 +415,11 @@ def merge_sites(sos_data):
     Standardizing cleanup site names, so each site has its own name that
     is consistent across data sets.
 
+    TODO: Much of the 2020 data is given in lon, lat coords instead of names.
+    Need to convert these, and convert names to lon, lat for map plots.
+    geopy Nominatim seems to not work for many types on input...
+    Find other free service?
+
     :param pd.DataFrame sos_data: Dataframe processed with the merge_columns function
     """
     # First remove leading and trailing spaces
@@ -442,7 +447,7 @@ def merge_sites(sos_data):
 
     # Apply some renaming (might have to be checked)
     _rename_site(sos_data, '3-Mile State Beach',
-                 ['3 Mile', '3-Mile', 'Three Mile'])
+                 ['3 Mile', '3-Mile', 'Three Mile', 'Three-Mile'])
     _rename_site(sos_data, '4-Mile State Beach',
                  ['4 Mile', '4-Mile', 'Four Mile'])
     _rename_site(sos_data, 'Aptos Creek', 'Aptos')
@@ -453,19 +458,24 @@ def merge_sites(sos_data):
     _rename_site(sos_data, 'Capitola', 'Capitola')
     _rename_site(sos_data, 'Carmel', 'Carmel')
     _rename_site(sos_data, 'Corcoran Lagoon',
-                 ['Corcoran', 'Corcoron'])
+                 ['Corcoran', 'Corcoron', '26Th'])
     _rename_site(sos_data, 'Coyote Creek', 'Coyote Creek')
     _rename_site(sos_data, 'Cowell/Main Beach',
                  ['Cowell', 'Coewll', 'Santa Cruz Main Beach'])
     _rename_site(sos_data, 'Davenport Landing', 'Davenport')
     _rename_site(sos_data, 'Del Monte Beach', 'Del Monte')
     _rename_site(sos_data, 'Elkhorn Slough', 'Elkhorn Slough')
+    _rename_site(sos_data, 'Felton Covered Bridge', 'Felton Covered Bridge')
     _rename_site(sos_data, "Fisherman's Wharf", 'Fisherman')
     _rename_site(sos_data, 'Fort Ord Dunes State Beach',
                  ['Fort Ord', 'Ft. Ord', 'Ford Ord'])
     _rename_site(sos_data, 'Greyhound Rock Beach', 'Greyhound')
+    _rename_site(sos_data, 'Harkins Slough', 'Harkin')
+    _rename_site(sos_data, 'Heller Park', ['Heller', 'Hellyer'])
     _rename_site(sos_data, 'Hidden Beach', 'Hidden Beach')
     _rename_site(sos_data, 'Laguna Grande', 'Laguna')
+    _rename_site(sos_data, 'Lakeview Campus', 'Lakeview')
+    _rename_site(sos_data, 'Leona Creek', 'Leona Creek')
     _rename_site(sos_data, 'Lighthouse Field State Beach',
                  ['Lighthouse', 'Its Beach', "It'S Beach"])
     _rename_site(sos_data, 'Lompico Creek', 'Lompico Creek')
@@ -477,6 +487,7 @@ def merge_sites(sos_data):
     _rename_site(sos_data, "Mitchell's Cove", "Mitchell'S Cove")
     _rename_site(sos_data, 'Monterey Bay Photo St.', 'Monterey Bay Photo')
     _rename_site(sos_data, 'Monterey State Beach', 'Monterey State')
+    _rename_site(sos_data, 'Moran Lake', 'Moran Lake')
     _rename_site(sos_data,  'Moss Landing',  'Moss Landing')
     _rename_site(sos_data, 'Natural Bridges State Beach', 'Natural Bridges')
     _rename_site(sos_data, 'New Brighton State Beach', 'New Brighton')

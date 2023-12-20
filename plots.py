@@ -8,6 +8,23 @@ import plotly.graph_objects as go
 import cleanup as cleanup
 
 
+def geo_lut():
+    data = [
+        {'Cleanup Site': 'Cowell/Main Beach', 'Lat': 36.96314713351904, 'Lon': -122.02243758278826},
+        {'Cleanup Site': 'Del Monte Beach', 'Lat': 36.60567463011781, 'Lon': -121.86921753856507},
+        {'Cleanup Site': 'Sunny Cove Beach', 'Lat': 36.9608131481512, 'Lon': -121.98939936638436},
+        {'Cleanup Site': 'SLR @ Felker', 'Lat': 36.98459460220125, 'Lon': -122.0270405610404},
+        {'Cleanup Site': 'Capitola', 'Lat': 36.9717416923847, 'Lon': -121.94958914242098},
+        {'Cleanup Site': 'SLR @ Soquel', 'Lat': 36.9734528505215, 'Lon': -122.0226709635966},
+        {'Cleanup Site': 'Lompico Creek', 'Lat': 37.1114960947694, 'Lon': -122.04525603510727},
+        {'Cleanup Site': 'Seabright State Beach', 'Lat': 36.963194113357105, 'Lon': -122.00719361268948},
+        {'Cleanup Site': 'Corcoran Lagoon', 'Lat': 36.959697974689185, 'Lon': -121.98498873132264},
+        {'Cleanup Site': 'Twin Lakes State Beach', 'Lat': 36.962252960276544, 'Lon': -121.99777127397948},
+    ]
+    lut = pd.DataFrame(data)
+    return lut
+
+
 def circle_packing_graph(df, min_items=None, color_scale=None):
     """
     Plot circle packing graph of cleanup items using the circlify package.
@@ -124,4 +141,24 @@ def treemap_graph(df, color_scale=None):
         width=1100,
         height=800,
     )
+    return fig
+
+
+def map_graph(df):
+
+    fig = px.scatter_mapbox(
+        data_frame=df,
+        lat='Lat',
+        lon='Lon',
+        size='Cigarette Butts',
+        hover_name='Cleanup Site',
+        hover_data=['Cleanup Site', 'Cigarette Butts'],
+        color_discrete_sequence=['fuchsia'],
+        zoom=12,
+        height=700,
+    )
+    fig.update_layout(mapbox_style="open-street-map")
+    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+    fig.update_layout(mapbox_bounds={"west": -123, "east": -121, "south": 36.5, "north": 40})
+
     return fig

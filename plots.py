@@ -145,7 +145,6 @@ def treemap_graph(df, color_scale=None):
 
 
 def map_graph(df):
-
     fig = px.scatter_mapbox(
         data_frame=df,
         lat='Lat',
@@ -154,11 +153,13 @@ def map_graph(df):
         hover_name='Cleanup Site',
         hover_data=['Cleanup Site', 'Cigarette Butts'],
         color_discrete_sequence=['fuchsia'],
-        zoom=12,
-        height=700,
+        zoom=9,
+        center={'lat': 36.5, 'lon': -122},
+        height=1500,
+        width=500,
     )
-    fig.update_layout(mapbox_style="open-street-map")
+    fig.update_layout(mapbox_style="carto-positron")
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
-    fig.update_layout(mapbox_bounds={"west": -123, "east": -121, "south": 36.5, "north": 40})
-
+    fig.update_layout(mapbox_bounds={"west": -124, "east": -120, "south": 35, "north": 38})
+    fig.update_layout(autosize=False, width=1000, height=800)
     return fig

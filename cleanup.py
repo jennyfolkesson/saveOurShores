@@ -360,7 +360,6 @@ def merge_columns(sos_data):
                'Tobacco Packaging/Wrap',
                'Smoking, Tobacco, Vape Items (Not Butts)',
                'Cigarette Box Or Wrappers',
-               'Cigar Tips',
                'Other Tobacco (Packaging, Lighter, Etc.)'])
     # Straws
     _add_cols(df,

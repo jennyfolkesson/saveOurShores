@@ -4,9 +4,10 @@ import glob
 import os
 import numpy as np
 import pandas as pd
+import yaml
 
 
-NONNUMERIC_COLS = ['Date',
+NONITEM_COLS = ['Date',
                    'Data Collection',
                    'Duration (Hrs)',
                    'County/City',
@@ -35,9 +36,21 @@ def parse_args():
     return parser.parse_args()
 
 
+def read_yml(yml_name):
+    """
+    Read YAML file
+
+    :param str yml_name: File name of config yaml with its full path
+    :return: dict config: Configuration parameters
+    """
+    with open(yml_name, 'r') as f:
+        config = yaml.safe_load(f)
+    return config
+
+
 def sum_items(df, col_sum=True):
     df_sum = df.copy()
-    df_sum.drop(NONNUMERIC_COLS, axis=1, inplace=True)
+    df_sum.drop(NONITEM_COLS, axis=1, inplace=True)
     # Compute total of columns
     if col_sum:
         df_sum = df_sum.sum(axis=0, numeric_only=True)
@@ -48,14 +61,14 @@ def sum_items(df, col_sum=True):
 
 def make_numeric_cols_numeric_again(sos_data):
     df = sos_data.copy()
-    for col in NONNUMERIC_COLS:
+    for col in NONITEM_COLS:
         if col not in df.columns:
             df[col] = np.nan
-    df_nonnumeric = df[NONNUMERIC_COLS]
-    df.drop(NONNUMERIC_COLS, axis=1, inplace=True)
+    df_nonitem = df[NONITEM_COLS]
+    df.drop(NONITEM_COLS, axis=1, inplace=True)
     for col in df.columns:
         df[col] = pd.to_numeric(df[col], errors='coerce')
-    df = pd.concat([df_nonnumeric, df], axis=1)
+    df = pd.concat([df_nonitem, df], axis=1)
     return df
 
 
@@ -74,10 +87,10 @@ def orient_data(sos_data):
     # Check if table axes are flipped (items should be in columns)
     nbr_unknowns = [col for col in col_names if isinstance(col, str) and 'Unnamed' in col]
     if len(nbr_unknowns) > 0:
-        # Some random stuff are sometimes placed as separate rows one empty row as separator
-        nan_idxs = sos_data.loc[pd.isna(sos_data[col_names[0]]), :].index
-        if len(nan_idxs) > 1:
-            sos_data.loc[nan_idxs[1], col_names[0]] = 'Other:'
+        # Some random stuff are sometimes placed as separate rows using one empty row as separator
+        # nan_idxs = sos_data.loc[pd.isna(sos_data[col_names[0]]), :].index
+        # if len(nan_idxs) > 1:
+        #     sos_data.loc[nan_idxs[1], col_names[0]] = 'Other:'
         # Set index to be totals before transposing
         sos_data = sos_data.set_index(col_names[0]).rename_axis(None)
         sos_data = sos_data.T
@@ -86,73 +99,22 @@ def orient_data(sos_data):
             sos_data.drop([np.nan], axis=1, inplace=True)
         # Drop NaN rows
         sos_data = sos_data.dropna(how='all')
-        # Sum all 'Other:' items so we don't have hundreds of columns
-        col_names = list(sos_data)
-        other_idx = -1
-        if 'Other:' in col_names:
-            other_idx = sos_data.columns.get_loc('Other:')
-        # Very special case, generalize later if problem reappears
-        elif 'Other 1- Wine Cork' in col_names:
-            other_idx = sos_data.columns.get_loc('Other 1- Wine Cork')
-        if other_idx > -1:
-            other_data = sos_data[col_names[other_idx:]].fillna(0)
-            sos_data['Other Sum'] = (
-                other_data.sum(axis=1, numeric_only=True))
-            # Drop the columns whose values have been summed in 'Other Sum'
-            sos_data.drop(col_names[other_idx:], axis=1, inplace=True)
+        # # Sum all 'Other:' items so we don't have hundreds of columns
+        # # TODO: do the binning of columns first then combine all the leftovers
+        # col_names = list(sos_data)
+        # other_idx = -1
+        # if 'Other:' in col_names:
+        #     other_idx = sos_data.columns.get_loc('Other:')
+        # # Very special case, generalize later if problem reappears
+        # elif 'Other 1- Wine Cork' in col_names:
+        #     other_idx = sos_data.columns.get_loc('Other 1- Wine Cork')
+        # if other_idx > -1:
+        #     other_data = sos_data[col_names[other_idx:]].fillna(0)
+        #     sos_data['Other Sum'] = (
+        #         other_data.sum(axis=1, numeric_only=True))
+        #     # Drop the columns whose values have been summed in 'Other Sum'
+        #     sos_data.drop(col_names[other_idx:], axis=1, inplace=True)
     return sos_data
-
-
-def rename_data(sos_data):
-    """
-    Rename columns with cumbersome names, and columns that have similar
-    or overlapping names.
-
-    :param pd.DataFrame sos_data: SOS data
-    """
-    # Change all column names to uppercase
-    sos_data.columns = map(lambda x: str(x).title(), sos_data.columns)
-    sos_data.rename(
-        columns={'Date Of Cleanup Event/Fecha': 'Date',
-                 'Cleanup Date': 'Date',
-                 'Cleanup Site/Sitio De Limpieza': 'Cleanup Site',
-                 'Estimated Size Of Location Cleaned (Sq Miles)': 'Cleaned Size (Sq Miles)',
-                 'Cleanup Area': 'Cleaned Size (Sq Miles)',
-                 'Data Collection Method': 'Data Collection',
-                 'Total Cleanup Duration (Hrs)': 'Duration (Hrs)',
-                 '# Of Volunteers': 'Adult Volunteers',
-                 'Pounds Of Trash Collected': 'Trash (lbs)',
-                 'Pounds Of Trash': 'Trash (lbs)',
-                 'Pounds Of Recycle Collected': 'Recycling (lbs)',
-                 'Pounds Of Recycling': 'Recycling (lbs)',
-                 'County/City Where The Event Was Held?': 'County/City',
-                 'County': 'County/City',
-                 'City/County': 'County/City',
-                 'Appliances (Refrigerators, Washers, Etc.)': 'Appliances',
-                 'Beverage Bottles (Glass)': 'Glass Bottles',
-                 'Beverages Sachets/Pouches': 'Beverage Pouches',
-                 'Beverages Sachets': 'Beverage Pouches',
-                 'Toys And Beach Accessories': 'Beach Gear',
-                 'Beach Chairs, Toys Umbrellas': 'Beach Gear',
-                 'Balloons Or Ribbon': 'Balloons',
-                 'Bandaids Or Bandages': 'Bandaids',
-                 'Bikes Or Bike Parts': 'Bikes',
-                 'Clothes, Cloth': 'Clothes',
-                 'Clothes Or Towels': 'Clothes',
-                 'Fireworkds': 'Fireworks',
-                 'Footwear (Shoes/Slippers)': 'Footwear',
-                 'Shoes': 'Footwear',
-                 'Glass Pieces And Chunks': 'Glass Pieces',
-                 'Pieces And Chunks': 'Glass Pieces',  # 2022 has pieces and chunks, are they glass?
-                 'Polystyrene Foodware (Foam)': 'Polystyrene Foodware',
-                 'Personal Protective Equipment (Masks, Gloves)': 'PPE',
-                 'Personal Protective Equipment': 'PPE',
-                 'Lids (Plastic)': 'Plastic Lids',
-                 'Rope (1 Yard/Meter = 1 Piece)': 'Rope',
-                 'Utensils (Plastic)': 'Utensils',
-                 'Forks, Knives, Spoons': 'Utensils',
-                 'Wood Pallets, Pieces And Processed Wood': 'Wood Pieces',
-                 }, inplace=True)
 
 
 def _add_cols(sos_data, target_col, source_cols):
@@ -179,213 +141,6 @@ def _add_cols(sos_data, target_col, source_cols):
                         lambda x: 0 if isinstance(x, str) else x)
                 sos_data[target_col] += sos_data[source_col]
                 sos_data.drop([source_col], axis=1, inplace=True)
-
-
-def merge_columns(sos_data):
-    """
-    Merge columns inspired by NOAA's ocean debris report.
-    It's hard to completely follow NOAA's categories because some of the
-    SOS data is bundled differently.
-    E.g. NOAA has fishing.line, fishing.net and fishinggear,
-    whereas SOS has categories such as
-    'Fishing Lines, Nets, Traps, Ropes, Pots', 'Fishing gear (lures, nets, etc.)'
-    as well as several other variations. In this case I've bundled them as
-    'Fishing Gear'.
-    There is also the question if you should lump categories together by items
-    or materials. I believe NOAA did both, but that might have been two
-    different processes.
-
-    :param pd.DataFrame sos_data: Dataframe containing cleanup data
-    :return pd.DataFrame df: Merged Dataframe
-    """
-    df = sos_data.copy()
-    # Merge columns
-
-    # 6-pack holders
-    _add_cols(df,
-              '6-Pack Holders',
-              ['6-Pack Holders',
-               'Plastic Six-Pack Rings',
-               '6Ppack Holders'])
-    # Bags
-    _add_cols(df,
-              'Plastic Bags',
-              ['Shopping Bags',
-               'Other Plastic Bags',
-               'Plastic Shopping Bags',
-               'Plastic Bags (Grocery, Shopping)',
-               'Plastic Bags (Trash) ',
-               'Plastic Bags (Ziplock, Snack)',
-               'Grocery Bags (Plastic)',
-               'Plastic Bags (Trash) New'])
-    # Bottle Caps
-    _add_cols(df,
-              'Bottle Caps',
-              ['Bottle Caps',
-               'Bottle Caps And Rings',
-               'Metal Bottle Caps',
-               'Plastic Bottle Caps And Rings',
-               'Plastic Bottle Caps Or Rings',
-               'Metal Bottle Caps Or Can Pulls',
-               'Metal Can Pulls/Tags',
-               'Bottle Caps (Plastic)',
-               'Bottle Caps (Metal)'])  # Not separated by material
-    # Cardboard, paper, magazines
-    _add_cols(df,
-              'Paper/Cardboard',
-              ['Cardboard',
-               'Paper Cardboard',
-               'Paper Bags',
-               'Cardboard, Newspapers, Magazines',
-               'Paper Newpapers/ Magazines',
-               'Newspapers/Magazines'])
-    # Cans
-    _add_cols(df,
-              'Cans',
-              ['Beverage Cans',
-               'Beer Cans',
-               'Soda Cans',
-               'Metal Beverage Cans'])
-    # E-waste
-    _add_cols(df,
-              'E-Waste',
-              ['E-Waste',
-               'Vape Items/ E-Smoking Devices',
-               'E-Cigarettes'])
-    # Fishing gear
-    _add_cols(df,
-              'Fishing Gear',
-              ['Fishing Gear (Lures, Nets, Etc.)',
-               'Fishing Lines, Nets, Traps, Ropes, Pots',
-               'Plastic Fishing Line, Nets, Lures, Floats',
-               'Fishing Net & Pieces',
-               'Fishing Line (1 Yard/Meter = 1 Piece)',
-               'Fishing Buoys, Pots & Traps',
-               'Metal Fishing Hooks Or Lures',
-               'Styrofoam Buoys Or Floats',
-               'Crab Pots',
-               'Fishing Line'])
-    # Food Containers
-    _add_cols(df,
-              'Food Containers',
-              ['Food Containers, Cups, Plates, Bowls',
-               'Food Containers (Plastic)',
-               'Food Containers (Foam)',
-               'Food Containers/ Cups/ Plates/ Bowls',
-               'Paper Food Containers, Cups, Plates',
-               'Paper Food Containers, Cups, Plates, Bowls',
-               'Paper/ Cardboard Food Containers, Cups, Plates, Bowls',
-               'Plastic Polystyrene Cups/Plates/Bowls (Foam)',
-               'Plastic Cups, Lids/Plates/Utensils',
-               'Polystyrene Foodware',
-               'Styrofoam Food Containers',
-               'Styrofoam Cups, Plates And Bowls ',
-               'Cups, Plates (Paper)',
-               'Cups, Plates (Plastic)',
-               'Cups, Plates (Foam)',
-               'Cups & Plates (Paper)',
-               'Cups & Plates (Plastic)',
-               'Cups & Plates (Foam)',
-               'Plastic Cups, Lids, Plates, Utensils',
-               'Styrofoam Cups, Plates And Bowls New'])
-    # Lighters
-    _add_cols(df,
-              'Lighters',
-              ['Cigarette Lighters',
-               'Disposable Lighters',
-               'Disposable Cigarette Lighters'])
-    # Nails
-    _add_cols(df,
-              'Metal Nails',
-              ['Nails', 'Metal Nails'])
-    # Personal hygiene
-    _add_cols(df,
-              'Personal Hygiene',
-              ['Personal Hygiene',
-               'Condoms',
-               'Diapers',
-               'Tampons/Tampon Applicators',
-               'Tampons/Applicators',
-               'Cotton Bud Sticks (Swabs)',
-               'Feminine Products',
-               'Feminine Hygeine Products'])
-    # Packaging
-    _add_cols(df,
-              'Plastic Packaging',
-              ['Foam Packaging',
-               'Other Plastic/ Foam Packaging',
-               'Other Plastic/Foam Packaging',
-               'Other Packaging (Clean Swell)',  # Assuming this is plastic
-               'Styrofoam Peanuts Or Packing Materials'])
-    # Plastic Bottles
-    _add_cols(df,
-              'Plastic Bottles',
-              ['Plastic Bottles',
-               'Other Plastic Bottles (Oil, Bleach, Etc.)',
-               'Plastic Motor Oil Bottles',
-               'Other Plastic Bottles',
-               'Beverage Bottles (Plastic)'])
-    # Plastic and foam pieces
-    _add_cols(df,
-              'Plastic Pieces',
-              ['Plastic Pieces',
-               'Polystyrene Pieces',
-               'Foam Dock Pieces',
-               'Styrofoam Pieces',
-               'Foam Pieces'])
-    # Plastic and foam (merge) to go
-    _add_cols(df,
-              'Plastic To-Go',
-              ['Plastic To-Go Items',
-               'Plastic Polystyrene Food "To-Go" Containers',
-               'Take Out/Away Containers (Foam)',
-               'Take Out/Away Containers (Plastic)',
-               'Take Out/Away (Plastic',
-               'Take Out/Away (Foam)'])
-    # Plastic food wrappers
-    _add_cols(df,
-              'Food Wrappers',
-              ['Plastic Food Wrappers',
-               'Food Wrappers',
-               'Food Wrapper',
-               'Plastic Food Wrappers (Ie Chips Or Candy)'])
-    # Rope
-    _add_cols(df,
-              'Rope',
-              ['Rope (Yard Pieces)', 'Rope'])
-    # Smoking, tobacco
-    _add_cols(df,
-              'Tobacco',
-              ['Smoking, Tobacco (Not E-Waste Or Butts)',
-               'Tobacco Packaging/Wrap',
-               'Smoking, Tobacco, Vape Items (Not Butts)',
-               'Cigarette Box Or Wrappers',
-               'Other Tobacco (Packaging, Lighter, Etc.)'])
-    # Straws
-    _add_cols(df,
-              'Straws/Stirrers',
-              ['Straws/Stirrers',
-               'Straws And Stirrers',
-               'Plastic Straws Or Stirrers'])
-    # Syringes
-    _add_cols(df,
-              'Syringes/Needles',
-              ['Syringes/Needles', 'Syringes Or Needles', 'Syringes'])
-    # Wood
-    _add_cols(df,
-              'Wood Pieces',
-              ['Wood Pieces',
-               'Pallets Or Wood'])
-    # Other
-    _add_cols(df,
-              'Other',
-              ['Other, Small',
-               'Other, Large',
-               'Other Plastics Waste',
-               'Other Waste (Metal, Paper, Etc.)',
-               'Other Trash (Clean Swell)',
-               'Other Sum'])
-    return df
 
 
 def _rename_site(sos_data, site_name, site_keys):
@@ -545,6 +300,152 @@ def merge_sites(sos_data):
     return sos_data
 
 
+def _merge_cols(sos_data, target_col, source_cols):
+    """
+    Helper function for merging columns
+
+    :param pd.DataFrame sos_data: Raw data from xlsx sheet
+    :param str target_col: Name of new/existing target column
+    :param list (str) source_cols: Columns to be merged into new column
+    """
+    # Check if target col already exists
+    existing_cols = list(sos_data)
+    if target_col not in existing_cols:
+        sos_data[target_col] = 0.
+    else:
+        if sos_data[target_col].dtype == 'O':
+            sos_data[target_col] = 0.
+    for source_col in source_cols:
+        if source_col in existing_cols:
+            if target_col != source_col:
+                if sos_data[source_col].dtype == 'O':
+                    # Sometimes there are both numbers and strings in cols *sigh*
+                    sos_data[source_col] = sos_data[source_col].apply(
+                        lambda x: 0 if isinstance(x, str) else x)
+                sos_data[target_col] += sos_data[source_col]
+                sos_data.drop([source_col], axis=1, inplace=True)
+
+
+def _get_source_cols(dest_name, config, sos_names):
+    col_info = config[dest_name]
+    source_names = col_info['sources']
+    source_names.append(dest_name)
+    required = False
+    if 'required' in col_info and isinstance(col_info['required'], bool):
+        required = col_info['required']
+    col_type = int
+    if 'type' in col_info and isinstance(col_info['type'], str):
+        if col_info['type'] in {'datetime', 'float', 'str', 'int'}:
+            col_type = eval(col_info['type'])
+
+    # Find desired source cols in source data
+    col_isect = list(set(source_names).intersection(set(sos_names)))
+    # if column is required, there must be exactly one source column
+    if required:
+        assert len(col_isect) == 1,(
+            "Can't find required column {}".format(dest_name))
+    # if type is str or datetime, they can't be added together
+    if col_type == str or col_type == datetime:
+        assert len(col_isect) <= 1, (
+            "Can't add columns {} of type {}".format(col_isect, col_type))
+    return col_isect, required, col_type
+
+
+def get_columns(sos_data, column_config='column_categories.yml'):
+    """
+    Reads a config yaml file that specifies which columns should
+    be in the destination dataframe and where to look for them in the
+    source data.
+    Each entry in the config specifies column name in the destination
+    data, which column names in the source file (+ destination name)
+    that should be searched for and potentially combined, the data format
+    for that column, and if it's required. Date is a special case that has to
+    be included in the config. E.g:
+    Date:
+      sources: ['Date Of Cleanup Event/Fecha', 'Cleanup Date']
+      type: datetime
+      required: True
+
+    Valid types: 'datetime', 'float', 'str' and 'int'.
+    If type isn't specified, default is int.
+    required can be True or False. If unspecified, default is False.
+    Source columns with numeric content that are not listed in the config file
+    will be combined into one destination column named 'Other'.
+    TODO: todo make config file name an input
+
+    Comments:  Inspired by NOAA's ocean debris report.
+    It's hard to completely follow NOAA's categories because some of the
+    SOS data is bundled differently.
+    E.g. NOAA has fishing.line, fishing.net and fishinggear,
+    whereas SOS has categories such as
+    'Fishing Lines, Nets, Traps, Ropes, Pots', 'Fishing gear (lures, nets, etc.)'
+    as well as several other variations. In this case I've bundled them as
+    'Fishing Gear'.
+    There is also the question if you should lump categories together by items
+    or materials. I believe NOAA did both, but that might have been two
+    different processes.
+
+    :param pd.DataFrame sos_data: Source data, after orienting columns
+    :param str column_config: Column config file name
+    :return pd.DataFrame df: Destination data, with columns specified by config
+    """
+    # Read config
+    config = read_yml(column_config)
+    dest_cols = list(config.keys())
+    # Change all source column names to uppercase
+    sos_data.columns = map(lambda x: str(x).title(), sos_data.columns)
+    # Create destination dataframe
+    df = pd.DataFrame()
+    # Start with the required column Date
+    assert 'Date' in dest_cols, "Date has to be included in the config"
+    col_isect, required, col_type = _get_source_cols(
+        'Date',
+        config,
+        sos_data.columns,
+    )
+    # All dates must be datetime objects
+    sos_data[col_isect[0]] = pd.to_datetime(
+        sos_data[col_isect[0]],
+        errors='coerce')
+    sos_data.dropna(subset=[col_isect[0]], inplace=True)
+    sos_data = sos_data.reset_index(drop=True)
+    dest_cols.remove('Date')
+    df['Date'] = sos_data[col_isect[0]].copy()
+    sos_data.drop(col_isect[0], axis=1, inplace=True)
+    # Old data has 'Volunteer Hours', which is 'Duration (Hrs)' * 'Adult Volunteers'
+    if 'Volunteer Hours' in sos_data.columns:
+        sos_data['# Of Volunteers'].replace(0, 1, inplace=True)
+        sos_data['Duration (Hrs)'] = sos_data['Volunteer Hours'] / sos_data['# Of Volunteers'].fillna(1)
+        sos_data.drop('Volunteer Hours', axis=1, inplace=True)
+    # Loop through remaining names in config
+    for dest_name in dest_cols:
+        print(dest_name)
+        col_isect, required, col_type = _get_source_cols(
+            dest_name,
+            config,
+            sos_data.columns,
+        )
+        print(col_isect)
+        if len(col_isect) > 0:
+            if col_type == str:
+                df[dest_name] = sos_data[col_isect[0]].astype(str)
+                sos_data.drop([col_isect[0]], axis=1, inplace=True)
+            elif col_type == datetime:
+                df[dest_name] = pd.to_datetime(sos_data[col_isect[0]])
+                sos_data.drop([col_isect[0]], axis=1, inplace=True)
+            else:
+                df[dest_name] = 0.
+                for col in col_isect:
+                    # Sometimes there are both numbers and strings in cols *sigh*
+                    sos_data[col] = sos_data[col].apply(
+                        lambda x: 0 if isinstance(x, str) else x)
+                    df[dest_name] += sos_data[col]
+                    sos_data.drop([col], axis=1, inplace=True)
+    # Sum rest of the data in an 'Other' column
+    df['Other'] = sos_data.fillna(0).sum(axis=1, numeric_only=True)
+    return df
+
+
 def read_sheet(file_path):
     """
     Reads an xlsx spreadsheet containing one year's worth of cleanup data
@@ -554,14 +455,7 @@ def read_sheet(file_path):
     """
     sos_data = pd.read_excel(file_path, na_values=['UNK', 'Unk', '-', '#REF!'])
     sos_data = orient_data(sos_data)
-    rename_data(sos_data)
-    # Old data has 'Volunteer Hours', which is 'Duration (Hrs)' * 'Adult Volunteers'
-    if 'Volunteer Hours' in sos_data.columns:
-        sos_data['Adult Volunteers'].replace(0, 1, inplace=True)
-        sos_data['Duration (Hrs)'] = sos_data['Volunteer Hours'] / sos_data['Adult Volunteers'].fillna(1)
-        sos_data.drop('Volunteer Hours', axis=1, inplace=True)
-    # # Treat NaN values as zeros for now
-    # sos_data.fillna(0, inplace=True)
+    sos_data = get_columns(sos_data)
     # Can't have numeric values in cleanup site
     sos_data['Cleanup Site'].replace([0, 1], np.NaN, inplace=True)
     sos_data['Date'].replace(0, np.NaN, inplace=True)
@@ -569,10 +463,7 @@ def read_sheet(file_path):
     sos_data.dropna(subset=['Cleanup Site', 'Date'], inplace=True)
     # Remove non-numeric values from item columns
     sos_data = make_numeric_cols_numeric_again(sos_data)
-    # All dates must be datetime objects
-    sos_data['Date'] = pd.to_datetime(sos_data['Date'], errors='coerce')
-    sos_data.dropna(subset=['Date'], inplace=True)
-    sos_data = sos_data.reset_index(drop=True)
+
     return sos_data
 
 
@@ -582,8 +473,6 @@ def merge_data(data_dir):
     for file_path in file_paths:
         print("Analyzing file: ", file_path)
         sos_data = read_sheet(file_path)
-        # TODO: check with SOS if columns are acceptable
-        sos_data = merge_columns(sos_data)
         # TODO: will need to further consolidate site names
         # TODO: separate site names and lat, lon coordinates
         sos_data = merge_sites(sos_data)

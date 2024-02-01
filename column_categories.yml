@@ -1,0 +1,215 @@
+Date:
+  sources: ['Date Of Cleanup Event/Fecha', 'Cleanup Date']
+  type: datetime
+  required: True
+Cleanup Site:
+  sources: ['Cleanup Site/Sitio De Limpieza']
+  type: str
+  required: True
+Cleaned Size (Sq Miles):
+  sources: ['Estimated Size Of Location Cleaned (Sq Miles)',
+            'Cleanup Area']
+  type: int
+  required: False
+Data Collection:
+  sources: ['Data Collection Method']
+  type: str
+Duration (Hrs):
+  sources: ['Total Cleanup Duration (Hrs)']
+  type: int
+  required: True
+Adult Volunteers:
+  sources: ['# Of Volunteers']
+  type: int
+  required: True
+Trash (lbs):
+  sources: ['Pounds Of Trash Collected', 'Pounds Of Trash']
+  type: float
+Recycling (lbs):
+  sources: ['Pounds Of Recycle Collected', 'Pounds Of Recycling']
+  type: float
+County/City:
+  sources: ['County/City Where The Event Was Held?', 'County', 'City/County']
+  type: str
+Aluminum Foil:
+  sources: []
+Appliances:
+  sources: ['Appliances (Refrigerators, Washers, Etc.)']
+Bagged Pet Waste:
+  sources: ['Dog Poop Bags']
+Balloons:
+  sources: ['Balloons Or Ribbon']
+Bandaids:
+  sources: ['Bandaids Or Bandages']
+Batteries:
+  sources: []
+Beverage Pouches:
+  sources: ['Beverages Sachets/Pouches', 'Beverages Sachets']
+Beach Gear:
+  sources: ['Toys And Beach Accessories', 'Beach Chairs, Toys Umbrellas', 'Sunglasses']
+Bikes:
+  sources: ['Bikes Or Bike Parts']
+Bottle Caps:
+  sources: ['Bottle Caps And Rings',
+            'Metal Bottle Caps',
+            'Plastic Bottle Caps And Rings',
+            'Plastic Bottle Caps Or Rings',
+            'Metal Bottle Caps Or Can Pulls',
+            'Metal Can Pulls/Tags',
+            'Bottle Caps (Plastic)',
+            'Bottle Caps (Metal)']
+Cans:
+  sources: ['Beverage Cans',
+            'Beer Cans',
+            'Soda Cans',
+            'Metal Beverage Cans']
+Car Parts:
+  sources: []
+Cigar Tips:
+  sources: []
+Cigarette Butts:
+  sources: []
+Clothes:
+  sources: ['Clothes, Cloth', 'Clothes Or Towels']
+Construction Materials:
+  sources: []
+E-Waste:
+  sources: ['Vape Items/ E-Smoking Devices',
+            'E-Cigarettes']
+Fireworks:
+  sources: ['Fireworkds']
+Fishing Gear:
+  sources: ['Fishing Gear (Lures, Nets, Etc.)',
+            'Fishing Lines, Nets, Traps, Ropes, Pots',
+            'Plastic Fishing Line, Nets, Lures, Floats',
+            'Fishing Net & Pieces',
+            'Fishing Line (1 Yard/Meter = 1 Piece)',
+            'Fishing Buoys, Pots & Traps',
+            'Metal Fishing Hooks Or Lures',
+            'Styrofoam Buoys Or Floats',
+            'Crab Pots',
+            'Fishing Pole',
+            'Fishing Line']
+Food Containers:
+  sources: ['Food Containers, Cups, Plates, Bowls',
+            'Food Containers (Plastic)',
+            'Food Containers (Foam)',
+            'Food Containers/ Cups/ Plates/ Bowls',
+            'Paper Food Containers, Cups, Plates',
+            'Paper Food Containers, Cups, Plates, Bowls',
+            'Paper/ Cardboard Food Containers, Cups, Plates, Bowls',
+            'Plastic Polystyrene Cups/Plates/Bowls (Foam)',
+            'Plastic Cups, Lids/Plates/Utensils',
+            'Plastic Food Containers',
+            'Polystyrene Foodware',
+            'Polystyrene Foodware (Foam)',
+            'Styrofoam Food Containers',
+            'Styrofoam Cups, Plates And Bowls ',
+            'Cups, Plates (Paper)',
+            'Cups, Plates (Plastic)',
+            'Cups, Plates (Foam)',
+            'Cups & Plates (Paper)',
+            'Cups & Plates (Plastic)',
+            'Cups & Plates (Foam)',
+            'Plastic Cups, Lids, Plates, Utensils',
+            'Styrofoam Cups, Plates And Bowls New']
+Food Wrappers:
+  sources: ['Plastic Food Wrappers',
+            'Food Wrappers',
+            'Food Wrapper',
+            'Plastic Food Wrappers (Ie Chips Or Candy)']
+Footwear:
+  sources: ['Footwear (Shoes/Slippers)', 'Shoes']
+Glass Bottles:
+  sources: ['Beverage Bottles (Glass)']
+Glass Pieces:
+  sources: ['Glass Pieces And Chunks', 'Pieces And Chunks']
+Lighters:
+  sources: ['Cigarette Lighters',
+            'Disposable Lighters',
+            'Disposable Cigarette Lighters']
+Metal Nails:
+  sources: ['Nails']
+Paper/Cardboard:
+  sources: ['Cardboard',
+            'Paper Cardboard',
+            'Paper Bags',
+            'Paper Pieces',
+            'Cardboard, Newspapers, Magazines',
+            'Paper Newpapers/ Magazines',
+            'Newspapers/Magazines']
+Personal Hygiene:
+  sources: ['Condoms',
+            'Diapers',
+            'Tampons/Tampon Applicators',
+            'Tampons/Applicators',
+            'Cotton Bud Sticks (Swabs)',
+            'Feminine Products',
+            'Wipes',
+            'Feminine Hygeine Products']
+Plastic Bags:
+  sources: ['Shopping Bags',
+            'Other Plastic Bags',
+            'Plastic Shopping Bags',
+            'Plastic Bags (Grocery, Shopping)',
+            'Plastic Bags (Trash) ',
+            'Plastic Bags (Ziplock, Snack)',
+            'Grocery Bags (Plastic)',
+            'Plastic Bags (Trash) New']
+Plastic Bottles:
+  sources: ['Other Plastic Bottles (Oil, Bleach, Etc.)',
+            'Plastic Motor Oil Bottles',
+            'Other Plastic Bottles',
+            'Beverage Bottles (Plastic)']
+Plastic Lids:
+  sources: ['Lids (Plastic)']
+Plastic Packaging:
+  sources: ['Foam Packaging',
+            'Other Plastic/ Foam Packaging',
+            'Other Plastic/Foam Packaging',
+            'Other Packaging (Clean Swell)',
+            'Styrofoam Peanuts Or Packing Materials']
+Plastic Pieces:
+  sources: ['Polystyrene Pieces',
+            'Foam Dock Pieces',
+            'Styrofoam Pieces',
+            'Foam Pieces']
+Plastic To-Go:
+  sources: ['Plastic To-Go Items',
+            'Plastic Polystyrene Food "To-Go" Containers',
+            'Take Out/Away Containers (Foam)',
+            'Take Out/Away Containers (Plastic)',
+            'Take Out/Away (Plastic',
+            'Take Out/Away (Foam)']
+PPE:
+  sources: ['Personal Protective Equipment (Masks, Gloves)',
+            'Personal Protective Equipment']
+Rope:
+  sources: ['Rope (Yard Pieces)', 'Rope', 'Rope (1 Yard/Meter = 1 Piece)']
+Strapping Bands:
+  sources: []
+Straws:
+  sources: ['Straws/Stirrers',
+            'Straws And Stirrers',
+            'Plastic Straws Or Stirrers']
+Syringes:
+  sources: ['Syringes/Needles', 'Syringes Or Needles', 'Syringes']
+Tires:
+  sources: []
+Tobacco:
+  sources: ['Smoking, Tobacco (Not E-Waste Or Butts)',
+            'Tobacco Packaging/Wrap',
+            'Smoking, Tobacco, Vape Items (Not Butts)',
+            'Cigarette Box Or Wrappers',
+            'Other Tobacco (Packaging, Lighter, Etc.)']
+Utensils:
+  sources: ['Utensils (Plastic)', 'Forks, Knives, Spoons']
+Wood Pieces:
+  sources: ['Wood Pallets, Pieces And Processed Wood',
+            'Wood Pieces',
+            'Pallets Or Wood']
+6-Pack Holders:
+  sources: ['Plastic Six-Pack Rings', '6Ppack Holders']
+
+
+

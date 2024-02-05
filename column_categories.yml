@@ -22,6 +22,8 @@ Adult Volunteers:
   sources: ['# Of Volunteers']
   type: int
   required: True
+Youth Volunteers:
+  sources: []
 Trash (lbs):
   sources: ['Pounds Of Trash Collected', 'Pounds Of Trash']
   type: float
@@ -31,6 +33,8 @@ Recycling (lbs):
 County/City:
   sources: ['County/City Where The Event Was Held?', 'County', 'City/County']
   type: str
+Type Of Cleanup:
+  sources: []
 Aluminum Foil:
   sources: []
 Appliances:

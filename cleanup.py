@@ -7,19 +7,6 @@ import pandas as pd
 import yaml
 
 
-NONITEM_COLS = ['Date',
-                'Data Collection',
-                'Duration (Hrs)',
-                'County/City',
-                'Cleanup Site',
-                'Cleaned Size (Sq Miles)',
-                'Adult Volunteers',
-                'Youth Volunteers',
-                'Trash (lbs)',
-                'Recycling (lbs)',
-                'Type Of Cleanup']
-
-
 def parse_args():
     """
     Parse command line arguments
@@ -48,9 +35,9 @@ def read_yml(yml_name):
     return config
 
 
-def sum_items(df, col_sum=True):
+def sum_items(df, nonitem_cols=[], col_sum=True):
     df_sum = df.copy()
-    df_sum.drop(NONITEM_COLS, axis=1, inplace=True)
+    df_sum.drop(nonitem_cols, axis=1, inplace=True)
     # Compute total of columns
     if col_sum:
         df_sum = df_sum.sum(axis=0, numeric_only=True)
@@ -181,32 +168,67 @@ def merge_sites(sos_data, config_name='site_categories.yml'):
     return sos_data
 
 
-def _get_source_cols(dest_name, config, sos_names):
-    col_info = config[dest_name]
-    source_names = col_info['sources']
-    source_names.append(dest_name)
-    required = False
-    if 'required' in col_info and isinstance(col_info['required'], bool):
-        required = col_info['required']
-    col_type = int
-    if 'type' in col_info and isinstance(col_info['type'], str):
-        if col_info['type'] in {'datetime', 'float', 'str', 'int'}:
-            col_type = eval(col_info['type'])
+def _get_source_cols(col_info, sos_names):
+    """
+    Find desired columns in source data, given a config column name.
 
-    # Find desired source cols in source data
-    col_isect = list(set(source_names).intersection(set(sos_names)))
+    :param dict col_info: Info for column name
+    :param list sos_names: List of column names in source data
+    :return list col_isect: Intersection of columns to search for and
+        columns in the source data.
+    """
+    col_isect = list(set(col_info['sources']).intersection(set(sos_names)))
     # if column is required, there must be exactly one source column
-    if required:
+    if col_info['required']:
         assert len(col_isect) == 1, (
-            "Can't find required column {}".format(dest_name))
+            "Can't find required column")
     # if type is str or datetime, they can't be added together
-    if col_type == str or col_type == datetime:
+    if col_info['type'] == 'str' or col_info['type'] == 'datetime':
         assert len(col_isect) <= 1, (
-            "Can't add columns {} of type {}".format(col_isect, col_type))
-    return col_isect, required, col_type
+            "Can't add columns {} of type {}".format(col_isect, col_info['type']))
+    return col_isect
 
 
-def clean_columns(sos_data, column_config='column_categories.yml'):
+def read_col_config(column_config='column_categories.yml'):
+    """
+    Read column config file.
+
+    :param str column_config: Name of config file (assumed in dir for now0
+    :return pd.DataFrame col_info: Info for each column in dataset:
+        Name str
+        Type str: datetime, str, int, float
+        Required bool
+        Material str
+        Sources list of str
+    """
+    config = read_yml(column_config)
+    col_names = list(config.keys())
+    assert 'Date' in col_names, "Date has to be included in the config"
+    for col_name in col_names:
+        col_info = config[col_name]
+        source_names = [col_name]
+        material = 'Mixed'
+        required = False
+        col_type = 'int'
+        if col_info is not None:
+            if 'sources' in col_info:
+                source_names += col_info['sources']
+            if 'material' in col_info:
+                material = col_info['material']
+            if 'required' in col_info and isinstance(col_info['required'], bool):
+                required = col_info['required']
+            if 'type' in col_info and isinstance(col_info['type'], str):
+                if col_info['type'] in {'datetime', 'float', 'str', 'int'}:
+                    col_type = col_info['type']
+        config[col_name] = {
+            'sources': source_names,
+            'type': col_type,
+            'required': required,
+            'material': material}
+    return config
+
+
+def clean_columns(sos_data, config):
     """
     Reads a config yaml file that specifies which columns should
     be in the destination dataframe and where to look for them in the
@@ -241,22 +263,19 @@ def clean_columns(sos_data, column_config='column_categories.yml'):
     different processes.
 
     :param pd.DataFrame sos_data: Source data, after orienting columns
-    :param str column_config: Column config file name
+    :param dict config: Column info from config file
     :return pd.DataFrame df: Destination data, with columns specified by config
     """
-    # Read config
-    config = read_yml(column_config)
-    dest_cols = list(config.keys())
     # Change all source column names to uppercase
     sos_data.columns = map(lambda x: str(x).title(), sos_data.columns)
     # Create destination dataframe
     df = pd.DataFrame()
+    # Create table containing item info
+    dest_cols = list(config)
     # Start with the required column Date
-    assert 'Date' in dest_cols, "Date has to be included in the config"
-    col_isect, required, col_type = _get_source_cols(
-        'Date',
-        config,
-        sos_data.columns,
+    col_isect = _get_source_cols(
+        col_info=config['Date'],
+        sos_names=list(sos_data),
     )
     # All dates must be datetime objects
     sos_data[col_isect[0]] = pd.to_datetime(
@@ -275,16 +294,16 @@ def clean_columns(sos_data, column_config='column_categories.yml'):
         sos_data.drop('Volunteer Hours', axis=1, inplace=True)
     # Loop through remaining names in config
     for dest_name in dest_cols:
-        col_isect, required, col_type = _get_source_cols(
-            dest_name,
-            config,
-            sos_data.columns,
+        col_info = config[dest_name]
+        col_isect = _get_source_cols(
+            col_info=col_info,
+            sos_names=list(sos_data),
         )
         if len(col_isect) > 0:
-            if col_type == str:
+            if col_info['type'] == 'str':
                 df[dest_name] = sos_data[col_isect[0]].astype(str)
                 sos_data.drop([col_isect[0]], axis=1, inplace=True)
-            elif col_type == datetime:
+            elif col_info['type'] == 'datetime':
                 df[dest_name] = pd.to_datetime(sos_data[col_isect[0]])
                 sos_data.drop([col_isect[0]], axis=1, inplace=True)
             else:
@@ -314,12 +333,13 @@ def merge_data(data_dir):
     file_paths = glob.glob(os.path.join(data_dir, '*.xlsx'))
     # Remove coordinates file
     file_paths = [s for s in file_paths if not s.endswith('Coordinates.xlsx')]
+    config = read_col_config()
     cleaned_data = []
     for file_path in file_paths:
         print("Analyzing file: ", file_path)
         sos_data = pd.read_excel(file_path, na_values=['UNK', 'Unk', '-', '#REF!'])
         sos_data = orient_data(sos_data)
-        sos_data = clean_columns(sos_data)
+        sos_data = clean_columns(sos_data, config)
         # Can't have numeric values in cleanup site
         sos_data['Cleanup Site'].replace([0, 1], np.NaN, inplace=True)
         sos_data['Date'].replace(0, np.NaN, inplace=True)
@@ -336,13 +356,23 @@ def merge_data(data_dir):
     )
     # Sort by date
     merged_data.sort_values(by='Date', inplace=True)
-    return merged_data
+    return merged_data, config
 
 
 if __name__ == '__main__':
     args = parse_args()
-    merged_data = merge_data(args.dir)
+    merged_data, config = merge_data(args.dir)
+    # Save dataframe with all years combined
     merged_data.to_csv(
         os.path.join(args.dir, "merged_sos_data.csv"),
+        index=False,
+    )
+    # Save cleaned config file
+    config = pd.DataFrame.from_dict(config)
+    config = config.T
+    config.insert(0, 'name', config.index)
+    config = config.reset_index(drop=True)
+    config.to_csv(
+        os.path.join(args.dir, "sos_column_info.csv"),
         index=False,
     )

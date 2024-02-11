@@ -35,15 +35,29 @@ def read_yml(yml_name):
     return config
 
 
-def sum_items(df, nonitem_cols=[], col_sum=True):
-    df_sum = df.copy()
-    df_sum.drop(nonitem_cols, axis=1, inplace=True)
+def group_by_year(df, col_config):
+    """
+    Take the dataframe containing entries from all year, group by year
+    and sum items.
+
+    :param pd.Dataframe df: SOS data
+    :param pd.DataFrame col_config: Column configuration including type, material
+    :return pd.DataFrame annual_data: SOS data grouped by year
+    """
+    annual_data = df.copy()
     # Compute total of columns
-    if col_sum:
-        df_sum = df_sum.sum(axis=0, numeric_only=True)
-    else:
-        df_sum = df_sum.sum(axis=1, numeric_only=True)
-    return df_sum
+    nonnumeric_cols = list(
+        col_config.loc[~col_config['type'].isin(['int', 'float'])]['name'],
+    )
+    nonnumeric_cols.remove('Date')
+    annual_data.drop(nonnumeric_cols, axis=1, inplace=True)
+    annual_data['Date'] = pd.to_datetime(
+        annual_data['Date'],
+        format='%Y-%m-%d',
+        errors='coerce')
+    annual_data = annual_data.set_index('Date').rename_axis(None)
+    annual_data = annual_data.groupby(annual_data.index.year).sum()
+    return annual_data
 
 
 def orient_data(sos_data):
@@ -225,6 +239,12 @@ def read_col_config(column_config='column_categories.yml'):
             'type': col_type,
             'required': required,
             'material': material}
+    # Add 'Other' to config as well
+    config['Other'] = {
+        'sources': ['Any items not in config'],
+        'type': 'int',
+        'required': False,
+        'material': 'Mixed'}
     return config
 
 

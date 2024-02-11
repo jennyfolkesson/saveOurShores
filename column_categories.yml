@@ -44,6 +44,7 @@ County/City:
   material: "NA"
 Type Of Cleanup:
   sources: []
+  type: 'str'
   material: "NA"
 Aluminum Foil:
   sources: []
@@ -156,11 +157,12 @@ Lighters:
 Nails:
   sources: ['Metal Nails']
   material: 'Metal'
+Paper Pieces:
+  material: 'Wood'
 Paper/Cardboard:
   sources: ['Cardboard',
             'Paper Cardboard',
             'Paper Bags',
-            'Paper Pieces',
             'Cardboard, Newspapers, Magazines',
             'Paper Newpapers/ Magazines',
             'Newspapers/Magazines']
@@ -206,6 +208,7 @@ Plastic Pieces:
             'Foam Dock Pieces',
             'Styrofoam Pieces',
             'Foam Pieces']
+  material: 'Plastic'
 To-Go Items:
   sources: ['Plastic To-Go Items',
             'Plastic Polystyrene Food "To-Go" Containers',

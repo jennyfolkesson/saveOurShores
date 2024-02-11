@@ -8,6 +8,15 @@ import plotly.graph_objects as go
 import cleanup as cleanup
 
 
+PLOT_COLORS = {
+    'Wood': 'brown',
+    'Plastic': 'red',
+    'Glass': 'yellow',
+    'Metal': 'orange',
+    'Mixed': 'grey',
+}
+
+
 def geo_lut():
     data = [
         {'Cleanup Site': 'Cowell/Main Beach', 'Lat': 36.96314713351904, 'Lon': -122.02243758278826},
@@ -25,24 +34,28 @@ def geo_lut():
     return lut
 
 
-def circle_packing_graph(df, min_items=None, color_scale=None):
+def circle_packing_graph(df, col_config, min_items=None, plot_colors=None):
     """
     Plot circle packing graph of cleanup items using the circlify package.
     Item type and number of items will be displayed on graph if there are at least
     min_items. All item types and corresponding numbers will appear as hover data.
+    Circles will be color coded based on their material.
 
     :param pd.DataFrame df: Cleaned SOS data
+    :param pd.DataFrame col_config: Cleaned column config file
     :param int/None min_items: Minimum nbr of items to show text inside circle without hovering
         If none: use percentages of largest number.
-    :param str/None color_scale: Plotly colorscale, see https://plotly.com/python/builtin-colorscales/
+    :param dict/None plot_colors: Dict with colors corresponding to material
     :return go.Figure fig: Plotly circle packing figure
     """
-    if color_scale is None:
-        color_scale = 'BuPu'
+    if plot_colors is None:
+        plot_colors = PLOT_COLORS
 
-    df_circ = df.copy()
+    col_sum = df.copy()
     # Compute total of columns
-    col_sum = cleanup.sum_items(df_circ)
+    nonitem_cols = list(col_config.loc[col_config['material'].isnull()]['name'])
+    col_sum.drop(nonitem_cols, axis=1, inplace=True)
+    col_sum = col_sum.sum(axis=0, numeric_only=True)
     # Sort values, circlify wants values sorted in descending order
     col_sum = col_sum.sort_values(ascending=False)
     # Remove zeros
@@ -75,23 +88,23 @@ def circle_packing_graph(df, min_items=None, color_scale=None):
         showgrid=False,
         zeroline=False,
     )
-    # Get some different colors
-    plot_colors = plotly.colors.sample_colorscale(color_scale, samplepoints=10, low=0, high=1.0, colortype='rgb')
-
     # add circles
     for idx, circle in enumerate(circles):
+        item = col_sum.index[idx]
+        material = col_config.loc[col_config['name'] == item, 'material'].iloc[0]
         x, y, r = circle
-        plot_color = plot_colors[int(round(r * 10))]
         fig.add_shape(type="circle",
                       xref="x",
                       yref="y",
                       x0=x - r, y0=y - r, x1=x + r, y1=y + r,
-                      fillcolor=plot_color,
+                      fillcolor=plot_colors[material],
+                      opacity=0.5,
                       line_width=2,
                       )
         nbr_items = int(col_sum.iloc[idx])
-        txt = "{} <br> {}".format(col_sum.index[idx], str(nbr_items))
+        txt = "{} <br> {}".format(item, str(nbr_items))
         # Text gets messy if circle is too small
+        # TODO: compare text length to radius
         if nbr_items > 7 * min_items or \
                 (nbr_items > min_items and len(txt) < 30):
             fig.add_annotation(
@@ -119,23 +132,25 @@ def circle_packing_graph(df, min_items=None, color_scale=None):
     return fig
 
 
-def treemap_graph(df, color_scale=None):
+def treemap_graph(annual_data, col_config, color_scale=None):
 
     if color_scale is None:
         color_scale = 'BuPu'
 
-    df_circ = df.copy()
-    # Compute total of columns
-    col_sum = cleanup.sum_items(df_circ)
-
-    df_sum = pd.DataFrame({'Item': col_sum.index, 'Quantity': col_sum.values})
-
-    fig = px.treemap(df_sum, path=[px.Constant('Cleanup Numbers'), 'Item'],
-                     values='Quantity',
-                     names='Item',
-                     color='Quantity',
-                     color_continuous_scale=color_scale,
-                     )
+    # Stack columns for treemap plot
+    col_stack = pd.DataFrame(annual_data.stack()).reset_index()
+    col_stack.columns = ['Year', 'Item', 'Quantity']
+    # Remove entries with zeros
+    col_stack = col_stack[col_stack['Quantity'] > 0]
+    # Plot treemap
+    fig = px.treemap(
+        col_stack,
+        path=[px.Constant("All"), 'Year', 'Item'],
+        values='Quantity',
+        names='Item',
+        color='Quantity',
+        color_continuous_scale=color_scale,
+    )
     fig.update_layout(
         autosize=False,
         width=1100,

@@ -17,23 +17,6 @@ PLOT_COLORS = {
 }
 
 
-def geo_lut():
-    data = [
-        {'Cleanup Site': 'Cowell/Main Beach', 'Lat': 36.96314713351904, 'Lon': -122.02243758278826},
-        {'Cleanup Site': 'Del Monte Beach', 'Lat': 36.60567463011781, 'Lon': -121.86921753856507},
-        {'Cleanup Site': 'Sunny Cove Beach', 'Lat': 36.9608131481512, 'Lon': -121.98939936638436},
-        {'Cleanup Site': 'SLR @ Felker', 'Lat': 36.98459460220125, 'Lon': -122.0270405610404},
-        {'Cleanup Site': 'Capitola', 'Lat': 36.9717416923847, 'Lon': -121.94958914242098},
-        {'Cleanup Site': 'SLR @ Soquel', 'Lat': 36.9734528505215, 'Lon': -122.0226709635966},
-        {'Cleanup Site': 'Lompico Creek', 'Lat': 37.1114960947694, 'Lon': -122.04525603510727},
-        {'Cleanup Site': 'Seabright State Beach', 'Lat': 36.963194113357105, 'Lon': -122.00719361268948},
-        {'Cleanup Site': 'Corcoran Lagoon', 'Lat': 36.959697974689185, 'Lon': -121.98498873132264},
-        {'Cleanup Site': 'Twin Lakes State Beach', 'Lat': 36.962252960276544, 'Lon': -121.99777127397948},
-    ]
-    lut = pd.DataFrame(data)
-    return lut
-
-
 def circle_packing_graph(df, col_config, min_items=None, plot_colors=None):
     """
     Plot circle packing graph of cleanup items using the circlify package.
@@ -102,28 +85,32 @@ def circle_packing_graph(df, col_config, min_items=None, plot_colors=None):
                       line_width=2,
                       )
         nbr_items = int(col_sum.iloc[idx])
-        txt = "{} <br> {}".format(item, str(nbr_items))
+        txt = ''
         # Text gets messy if circle is too small
         # TODO: compare text length to radius
         if nbr_items > 7 * min_items or \
                 (nbr_items > min_items and len(txt) < 30):
-            fig.add_annotation(
-                x=x,
-                y=y,
-                text=txt,
-                hovertext=txt,
-                showarrow=False,
-                font_size=10,
+            txt = "{} <br> {}".format(item, str(nbr_items))
+        fig.add_annotation(
+            x=x,
+            y=y,
+            text=txt,
+            hovertext=txt,
+            showarrow=False,
+            font_size=10,
+        )
+
+    for material in PLOT_COLORS.keys():
+        fig.add_traces(
+            go.Scatter(
+                x=[None],
+                y=[None],
+                mode="markers",
+                name=material,
+                marker=dict(size=12, color=PLOT_COLORS[material], symbol='circle'),
             )
-        else:
-            fig.add_annotation(
-                x=x,
-                y=y,
-                text='',
-                hovertext=txt,
-                showarrow=False,
-                font_size=10,
-            )
+        )
+    fig.update_traces(showlegend=True)
     fig.update_layout(
         autosize=False,
         width=1100,
@@ -159,15 +146,24 @@ def treemap_graph(annual_data, col_config, color_scale=None):
     return fig
 
 
-def map_graph(df):
+def map_graph(df, circ_color='fuchsia'):
+    """
+    Plot sites where cigarettes have been cleaned up as circles on a map.
+    The size of the circle corresponds to the amount of cigarette butts.
+
+    :param pd.DataFrame df: Dataframe containing Cleanup Site, Cigarette Buttts, and
+        Latitude, Longitude
+    :param str circ_color: Color of circles
+    :return plotly.graph_objs fig: Map with circles corresponding to cigarette butts
+    """
     fig = px.scatter_mapbox(
         data_frame=df,
-        lat='Lat',
-        lon='Lon',
+        lat='Latitude',
+        lon='Longitude',
         size='Cigarette Butts',
         hover_name='Cleanup Site',
         hover_data=['Cleanup Site', 'Cigarette Butts'],
-        color_discrete_sequence=['fuchsia'],
+        color_discrete_sequence=[circ_color],
         zoom=9,
         center={'lat': 36.5, 'lon': -122},
         height=1500,

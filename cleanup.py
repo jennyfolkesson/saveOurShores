@@ -170,9 +170,8 @@ def merge_sites(sos_data, config_name='site_categories.yml'):
     _replace_name(sos_data, 'SLR Cleanup', 'SLR')
 
     config = read_yml(config_name)
-    site_names = list(config.keys())
     # Apply some renaming according to config (check with SOS)
-    for site_name in site_names:
+    for site_name in list(config.keys()):
         _rename_site(sos_data, site_name, config[site_name])
 
     # sos_data = sos_data.set_index('Cleanup Site').rename_axis(None)

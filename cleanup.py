@@ -1,5 +1,6 @@
 import argparse
-import datetime
+from geopy import distance
+from geopy import Nominatim
 import glob
 import os
 import numpy as np
@@ -86,6 +87,31 @@ def orient_data(sos_data):
     return sos_data
 
 
+def add_coords(sos_data):
+    """
+    This function is intended to look up lat, lon coordinates for
+    cleanup sites, but I'm currently running into a timeout error
+    when trying it for a sos_data dataframe.
+    TODO: use known coordinates from csv first and only look up missing coords
+
+    :param pd.DataFrame sos_data: SOS data
+    :return pd.DataFrame sos_coords: SOS data with lat, lon
+    """
+    geolocator = Nominatim(user_agent="save_our_shores")
+    # sos_data['Latitude'] = 0.
+    # sos_data['Longitude'] = 0.
+    for idx, row in sos_data.iterrows():
+        if row['Latitude'] != row['Latitude']:
+            geo_str = row['Cleanup Site'] + ', ' + row['County/City'] + ', CA'
+            geo_info = geolocator.geocode(geo_str)
+            if geo_info is not None:
+                coords = geo_info[1]
+                sos_data.loc[idx, 'Latitude'] = coords[0]
+                sos_data.loc[idx, 'Longitude'] = coords[1]
+    sos_coords = sos_data[(sos_data['Latitude'] > 30) & (sos_data['Longitude'] < 100)]
+    return sos_coords
+
+
 def _add_cols(sos_data, target_col, source_cols):
     """
     Helper function for merging columns
@@ -133,7 +159,35 @@ def _replace_name(sos_data, old_str, new_str):
         lambda s: str(s).replace(old_str, new_str))
 
 
-def merge_sites(sos_data, config_name='site_categories.yml'):
+def site_names_from_coords(sos_data, coords, dist_thresh=1.):
+    """
+    Some Cleanup Sites have coordinates in string format instead of names.
+    Try to replace them with names for know sites if possible.
+
+    :param pd.DataFrame sos_data: SOS data
+    :param pd.DataFrame coords: Cleanup sites with known coordinates
+    :param float dist_thresh: Max distance for site name assignment (km)
+    """
+    coord_sites = sos_data[sos_data['Cleanup Site'].str.contains(', ')]
+    for idx, row in coord_sites.iterrows():
+        c = row['Cleanup Site'].split(', ')
+        if c[0].isdigit() and c[1][1:].isdigit():
+            lat = float('0.' + c[0]) * 100
+            lon = - float('0.' + c[1][1:]) * 1000
+            c1 = (lat, lon)
+            min_dist = 10000
+            min_name = ''
+            for c_idx, c_row in coords.iterrows():
+                c2 = (c_row['Latitude'], c_row['Longitude'])
+                dist = distance.distance(c1, c2).km
+                if dist < min_dist:
+                    min_dist = dist
+                    min_name = c_row['Cleanup Site']
+            if min_dist < dist_thresh:
+                sos_data.loc[idx, 'Cleanup Site'] = min_name
+
+
+def merge_sites(sos_data, coords, config_name='site_categories.yml'):
     """
     Standardizing cleanup site names, so each site has its own name that
     is consistent across data sets.
@@ -144,7 +198,8 @@ def merge_sites(sos_data, config_name='site_categories.yml'):
     Find other free service?
 
     :param pd.DataFrame sos_data: Dataframe processed with the merge_columns function
-    :param str config_name: Path to YAML file containing names and
+    :param str config_name: Path to YAML file containing site names and search keys
+    :param pd.DataFrame coords: Dataframe containing lat, lon coords for common sites
     """
     # First remove leading and trailing spaces
     sos_data['Cleanup Site'] = sos_data['Cleanup Site'].apply(
@@ -174,10 +229,9 @@ def merge_sites(sos_data, config_name='site_categories.yml'):
     for site_name in list(config.keys()):
         _rename_site(sos_data, site_name, config[site_name])
 
-    # sos_data = sos_data.set_index('Cleanup Site').rename_axis(None)
-    # sos_data.rename(index=row_names, inplace=True)
-    # sos_data['Cleanup Site'] = sos_data.index
-    # sos_data = sos_data.reset_index(drop=True)
+    # Find Cleanup Sites that are coordinates instead of names
+    site_names_from_coords(sos_data, coords)
+
     return sos_data
 
 
@@ -353,6 +407,7 @@ def merge_data(data_dir):
     # Remove coordinates file
     file_paths = [s for s in file_paths if not s.endswith('Coordinates.xlsx')]
     config = read_col_config()
+    coords = pd.read_csv(os.path.join(data_dir, 'cleanup_site_coordinates.csv'))
     cleaned_data = []
     for file_path in file_paths:
         print("Analyzing file: ", file_path)
@@ -365,7 +420,7 @@ def merge_data(data_dir):
         # All datasets must contain date and site (this also removes any summary)
         sos_data.dropna(subset=['Cleanup Site', 'Date'], inplace=True)
         # TODO: separate site names and lat, lon coordinates
-        sos_data = merge_sites(sos_data)
+        sos_data = merge_sites(sos_data, coords=coords)
         cleaned_data.append(sos_data)
     # Concatenate the dataframes
     merged_data = pd.concat(

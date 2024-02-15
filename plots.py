@@ -86,16 +86,17 @@ def circle_packing_graph(df, col_config, min_items=None, plot_colors=None):
                       )
         nbr_items = int(col_sum.iloc[idx])
         txt = ''
+        hovertxt = "{} <br> {}".format(item, str(nbr_items))
         # Text gets messy if circle is too small
         # TODO: compare text length to radius
         if nbr_items > 7 * min_items or \
                 (nbr_items > min_items and len(txt) < 30):
-            txt = "{} <br> {}".format(item, str(nbr_items))
+            txt = hovertxt
         fig.add_annotation(
             x=x,
             y=y,
             text=txt,
-            hovertext=txt,
+            hovertext=hovertxt,
             showarrow=False,
             font_size=10,
         )
@@ -107,7 +108,10 @@ def circle_packing_graph(df, col_config, min_items=None, plot_colors=None):
                 y=[None],
                 mode="markers",
                 name=material,
-                marker=dict(size=12, color=PLOT_COLORS[material], symbol='circle'),
+                marker=dict(size=12,
+                            color=PLOT_COLORS[material],
+                            symbol='circle',
+                            opacity=0.5),
             )
         )
     fig.update_traces(showlegend=True)

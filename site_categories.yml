@@ -6,6 +6,7 @@
 'Blacks Beach': 'Black'
 'Bonny Doon State Beach': 'Bonny Doon'
 'Capitola Beach': 'Capitola'
+'Carbonera Creek': 'Carbonera Creek'
 'Carmel Beach': 'Carmel Beach'
 'Carmel Meadows/Ribera Beach': ['Carmel Meadows', 'Ribera']
 'Carmel River State Beach':  'Carmel River'
@@ -18,7 +19,7 @@
 'Elkhorn Slough': 'Elkhorn Slough'
 'Felton Covered Bridge': 'Felton Covered Bridge'
 "Fisherman's Wharf": 'Fisherman'
-'Fort Ord Dunes State Beach': ['Fort Ord', 'Ft. Ord', 'Ford Ord']
+'Fort Ord Dunes State Beach': ['Fort Ord', 'Ft. Ord', 'Ford Ord', 'Ft Ord']
 'Four-Mile State Beach': ['4 Mile', '4-Mile', 'Four Mile', 'Four-Mile']
 'Garrapata State Beach': 'Garrapata'
 'Greyhound Rock Beach': 'Greyhound'
@@ -74,10 +75,9 @@
 'SLR @ Felton': 'SLR @ Felton'
 'SLR @ Slv Recycling Center': 'SLR @ Slv Recycling'
 'SLR @ The Tannery Arts Center': 'Tannery'
-'SLR @ Felker': ['SLR @ Felker', 'SLR/Felke', 'San Lorenzo River Levee','SLR Levee']
+'SLR @ Felker': ['SLR @ Felker', 'SLR/Felke', 'San Lorenzo River Levee','SLR Levee', 'SLR @ Hwy 1', 'SLR @ Highway 1']
 'SLR @ Fillmore': ['SLR @ Fillmore', 'SLR @ Filmore']
-'SLR @ Hwy 1': 'SLR @ Hwy 1'
 'SLR @ Laurel': 'SLR @ Laurel'
 'SLR @ Riverside': 'SLR @ Riverside'
-'SLR @ Soquel': 'SLR @ Soquel'
+'SLR @ Soquel': ['SLR @ Soquel', 'SLR (Soquel']
 'SLR @ Water': 'SLR @ Water'

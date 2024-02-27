@@ -7,12 +7,13 @@ import plotly.graph_objects as go
 
 import cleanup as cleanup
 
+SOS_BLUE = '#00b5e2'
 
 PLOT_COLORS = {
-    'Wood': 'brown',
-    'Plastic': 'red',
-    'Glass': 'yellow',
-    'Metal': 'orange',
+    'Wood': 'teal',
+    'Plastic': 'blue',
+    'Glass': SOS_BLUE,
+    'Metal': 'lightgreen',
     'Mixed': 'grey',
 }
 
@@ -150,7 +151,7 @@ def treemap_graph(annual_data, col_config, color_scale=None):
     return fig
 
 
-def map_graph(df, circ_color='fuchsia'):
+def map_graph(df, circ_color=SOS_BLUE):
     """
     Plot sites where cigarettes have been cleaned up as circles on a map.
     The size of the circle corresponds to the amount of cigarette butts.

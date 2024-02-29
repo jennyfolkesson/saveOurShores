@@ -10,11 +10,11 @@ import cleanup as cleanup
 SOS_BLUE = '#00b5e2'
 
 PLOT_COLORS = {
+    'Mixed': 'grey',
     'Wood': 'teal',
-    'Plastic': 'blue',
     'Glass': SOS_BLUE,
     'Metal': 'lightgreen',
-    'Mixed': 'grey',
+    'Plastic': 'blue',
 }
 
 
@@ -29,10 +29,27 @@ def circle_packing_graph(df, col_config, min_items=None, plot_colors=None):
     :param pd.DataFrame col_config: Cleaned column config file
     :param int/None min_items: Minimum nbr of items to show text inside circle without hovering
         If none: use percentages of largest number.
-    :param dict/None plot_colors: Dict with colors corresponding to material
+    :param None/str plot_colors: Dict with colors corresponding to material or plotly colorscale name
     :return go.Figure fig: Plotly circle packing figure
     """
-    if plot_colors is None:
+    if plot_colors is not None:
+        assert isinstance(plot_colors, str),\
+            "plot_colors must be string corresponding to plotly colormap"
+        plot_colors = plotly.colors.sample_colorscale(
+            plot_colors,
+            samplepoints=5,
+            low=0,
+            high=1,
+            colortype='rgb',
+        )
+        plot_colors = {
+            'Mixed': plot_colors[0],
+            'Wood': plot_colors[1],
+            'Glass': plot_colors[2],
+            'Metal': plot_colors[3],
+            'Plastic': plot_colors[4],
+        }
+    else:
         plot_colors = PLOT_COLORS
 
     col_sum = df.copy()
@@ -102,15 +119,15 @@ def circle_packing_graph(df, col_config, min_items=None, plot_colors=None):
             font_size=10,
         )
 
-    for material in PLOT_COLORS.keys():
+    for material in plot_colors.keys():
         fig.add_traces(
             go.Scatter(
                 x=[None],
                 y=[None],
                 mode="markers",
                 name=material,
-                marker=dict(size=12,
-                            color=PLOT_COLORS[material],
+                marker=dict(size=16,
+                            color=plot_colors[material],
                             symbol='circle',
                             opacity=0.5),
             )
@@ -118,8 +135,11 @@ def circle_packing_graph(df, col_config, min_items=None, plot_colors=None):
     fig.update_traces(showlegend=True)
     fig.update_layout(
         autosize=False,
-        width=1100,
-        height=1100,
+        width=1000,
+        height=1000,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        title="Total Number of Items Collected By Category and Material in 2023",
     )
     return fig
 

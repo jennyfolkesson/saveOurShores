@@ -11,12 +11,20 @@ import cleanup as cleanup
 
 SOS_BLUE = '#00b5e2'
 
+# PLOT_COLORS = {
+#     'Mixed': 'grey',
+#     'Wood': 'teal',
+#     'Glass': SOS_BLUE,
+#     'Metal': 'lightgreen',
+#     'Plastic': 'blue',
+# }
+
 PLOT_COLORS = {
     'Mixed': 'grey',
-    'Wood': 'teal',
-    'Glass': SOS_BLUE,
-    'Metal': 'lightgreen',
-    'Plastic': 'blue',
+    'Wood': 'brown',
+    'Glass': 'yellow',
+    'Metal': 'orange',
+    'Plastic': 'red',
 }
 
 
@@ -128,7 +136,7 @@ def circle_packing_graph(df, col_config, min_items=None, plot_colors=None, opaci
                 y=[None],
                 mode="markers",
                 name=material,
-                marker=dict(size=16,
+                marker=dict(size=20,
                             color=plot_colors[material],
                             symbol='circle',
                             opacity=opacity),
@@ -173,7 +181,7 @@ def treemap_graph(annual_data, col_config, color_scale=None):
     return fig
 
 
-def map_graph(df, circ_color=SOS_BLUE):
+def map_graph(df, circ_color='fuchsia'):
     """
     Plot sites where cigarettes have been cleaned up as circles on a map.
     The size of the circle corresponds to the amount of cigarette butts.
@@ -199,10 +207,49 @@ def map_graph(df, circ_color=SOS_BLUE):
     fig.update_layout(mapbox_bounds={
         "west": df['Longitude'].min() - .1,
         "east": df['Longitude'].max() + .1,
-        "south": df['Latitude'].min() - .1,
-        "north": df['Latitude'].max() + .1,
+        "south": df['Latitude'].min() - .01,
+        "north": df['Latitude'].max() + .01,
     })
     fig.update_layout(autosize=False, width=1000, height=1000)
+    return fig
+
+
+def map_graph_static(df, map_bounds=None, w=None, h=None, colorscale='Sunsetdark'):
+    """
+    Plot sites where cigarettes have been cleaned up as circles on a map.
+    The size of the circle corresponds to the amount of cigarette butts.
+
+    :param pd.DataFrame df: Dataframe containing Cleanup Site, Cigarette Buttts, and
+        Latitude, Longitude
+    :param dict map_bounds: Map boundaries
+    :return plotly.graph_objs fig: Map with circles corresponding to cigarette butts
+    """
+    if map_bounds is None:
+        map_bounds = {
+            "west": df['Longitude'].min() - .1,
+            "east": df['Longitude'].max() + .1,
+            "south": df['Latitude'].min() - .01,
+            "north": df['Latitude'].max() + .01,
+        }
+    if w is None:
+        w = 1000
+    if h is None:
+        h = 1000
+    fig = px.scatter_mapbox(
+        data_frame=df,
+        lat='Latitude',
+        lon='Longitude',
+        size='Cigarette Butts',
+        hover_name='Cleanup Site',
+        hover_data=['Cleanup Site', 'Cigarette Butts'],
+        color='Cigarette Butts',
+        color_continuous_scale=colorscale,
+        zoom=8,
+    )
+    fig.update_layout(mapbox_style="carto-positron")
+    fig.update_layout(margin={"r": 0.1, "t": 0.1, "l": 0.1, "b": 0.1})
+    fig.update_layout(mapbox_bounds=map_bounds)
+    fig.update_layout(autosize=False, width=w, height=h)
     return fig
 
 
@@ -217,7 +264,7 @@ def make_and_save_graphs(sos_data, data_dir, ext='.png'):
 
     # Get data from 2023 and make circle packing graph
     sos23 = sos_data[sos_data['Date'].dt.year == 2023]
-    fig = circle_packing_graph(sos23, col_config, plot_colors='Deep')
+    fig = circle_packing_graph(sos23, col_config, plot_colors=None)
     fig.write_image(os.path.join(image_dir, "Circle_packing_items_materials_2023" + ext))
 
     # Create bar graph for years 2013-23
@@ -345,10 +392,18 @@ def make_and_save_graphs(sos_data, data_dir, ext='.png'):
     # Load file containing coordinates for site names and join it with the cigarette butt data
     coords = pd.read_csv(os.path.join(data_dir, 'cleanup_site_coordinates.csv'))
     sos23 = pd.merge(sos23, coords, how='left', on="Cleanup Site")
-    fig = map_graph(sos23)
+    fig = map_graph_static(sos23)
     fig.write_image(os.path.join(image_dir, "Map_cigarette_butts_by_location_2023" + ext))
+    # Santa Cruz only
+    map_bounds = {
+        "west": -122.35,
+        "east": -121.59,
+        "south": 36.92,
+        "north": 37}
+    fig = map_graph_static(sos23, map_bounds, h=600)
+    fig.write_image(os.path.join(image_dir, "Map_cigarette_butts_Santa_Cruz_2023" + ext))
 
-    # Debris caused by smokin 2013-23
+    # Debris caused by smoking 2013-23
     annual_smoking = annual_data[['Cigarette Butts', 'Cigar Tips', 'E-Waste', 'Tobacco', 'Lighters']].copy()
     for item in list(annual_smoking):
         annual_smoking[item] = annual_smoking[item] / annual_data['Total Volunteers']

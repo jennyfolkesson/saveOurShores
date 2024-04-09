@@ -181,47 +181,17 @@ def treemap_graph(annual_data, col_config, color_scale=None):
     return fig
 
 
-def map_graph(df, circ_color='fuchsia'):
+def map_graph(df, map_bounds=None, w=None, h=None, single_color=True):
     """
     Plot sites where cigarettes have been cleaned up as circles on a map.
     The size of the circle corresponds to the amount of cigarette butts.
 
     :param pd.DataFrame df: Dataframe containing Cleanup Site, Cigarette Buttts, and
         Latitude, Longitude
-    :param str circ_color: Color of circles
-    :return plotly.graph_objs fig: Map with circles corresponding to cigarette butts
-    """
-    fig = px.scatter_mapbox(
-        data_frame=df,
-        lat='Latitude',
-        lon='Longitude',
-        size='Cigarette Butts',
-        hover_name='Cleanup Site',
-        hover_data=['Cleanup Site', 'Cigarette Butts'],
-        color_discrete_sequence=[circ_color],
-        zoom=8,
-        # center={'lat': 36, 'lon': -122},
-    )
-    fig.update_layout(mapbox_style="carto-positron")
-    fig.update_layout(margin={"r": 0.1, "t": 0.1, "l": 0.1, "b": 0.1})
-    fig.update_layout(mapbox_bounds={
-        "west": df['Longitude'].min() - .1,
-        "east": df['Longitude'].max() + .1,
-        "south": df['Latitude'].min() - .01,
-        "north": df['Latitude'].max() + .01,
-    })
-    fig.update_layout(autosize=False, width=1000, height=1000)
-    return fig
-
-
-def map_graph_static(df, map_bounds=None, w=None, h=None, colorscale='Sunsetdark'):
-    """
-    Plot sites where cigarettes have been cleaned up as circles on a map.
-    The size of the circle corresponds to the amount of cigarette butts.
-
-    :param pd.DataFrame df: Dataframe containing Cleanup Site, Cigarette Buttts, and
-        Latitude, Longitude
-    :param dict map_bounds: Map boundaries
+    :param dict map_bounds: Min and max latitudes and longitude for map boundary
+    :param int/None w: Graph width
+    :param int/None h: Graph height
+    :param bool single_color: Plots either single color or colorscale
     :return plotly.graph_objs fig: Map with circles corresponding to cigarette butts
     """
     if map_bounds is None:
@@ -235,17 +205,30 @@ def map_graph_static(df, map_bounds=None, w=None, h=None, colorscale='Sunsetdark
         w = 1000
     if h is None:
         h = 1000
-    fig = px.scatter_mapbox(
-        data_frame=df,
-        lat='Latitude',
-        lon='Longitude',
-        size='Cigarette Butts',
-        hover_name='Cleanup Site',
-        hover_data=['Cleanup Site', 'Cigarette Butts'],
-        color='Cigarette Butts',
-        color_continuous_scale=colorscale,
-        zoom=8,
-    )
+    if single_color:
+        fig = px.scatter_mapbox(
+            data_frame=df,
+            lat='Latitude',
+            lon='Longitude',
+            size='Cigarette Butts',
+            hover_name='Cleanup Site',
+            hover_data=['Cleanup Site', 'Cigarette Butts'],
+            color_discrete_sequence=['fuchsia'],
+            zoom=8,
+        )
+    else:
+        fig = px.scatter_mapbox(
+            data_frame=df,
+            lat='Latitude',
+            lon='Longitude',
+            size='Cigarette Butts',
+            hover_name='Cleanup Site',
+            hover_data=['Cleanup Site', 'Cigarette Butts'],
+            color='Cigarette Butts',
+            color_continuous_scale='Sunsetdark',
+            zoom=8,
+        )
+
     fig.update_layout(mapbox_style="carto-positron")
     fig.update_layout(margin={"r": 0.1, "t": 0.1, "l": 0.1, "b": 0.1})
     fig.update_layout(mapbox_bounds=map_bounds)
@@ -254,6 +237,15 @@ def map_graph_static(df, map_bounds=None, w=None, h=None, colorscale='Sunsetdark
 
 
 def make_and_save_graphs(sos_data, data_dir, ext='.png'):
+    """
+    Manipulate the data frame to extract features, plot graphs, and write
+    them to an output directory, which is a subdirectory of the input data directory
+    named 'Graphs'.
+
+    :param pd.DataFrame sos_data: SOS data collected over the years.
+    :param str data_dir: Data directory
+    :param st ext: Graph file extention (default: '.png')
+    """
     # Creates subdirectory for graphs
     image_dir = os.path.join(data_dir, "Graphs")
     os.makedirs(image_dir, exist_ok=True)
@@ -392,7 +384,7 @@ def make_and_save_graphs(sos_data, data_dir, ext='.png'):
     # Load file containing coordinates for site names and join it with the cigarette butt data
     coords = pd.read_csv(os.path.join(data_dir, 'cleanup_site_coordinates.csv'))
     sos23 = pd.merge(sos23, coords, how='left', on="Cleanup Site")
-    fig = map_graph_static(sos23)
+    fig = map_graph(sos23, single_color=False)
     fig.write_image(os.path.join(image_dir, "Map_cigarette_butts_by_location_2023" + ext))
     # Santa Cruz only
     map_bounds = {
@@ -400,7 +392,7 @@ def make_and_save_graphs(sos_data, data_dir, ext='.png'):
         "east": -121.59,
         "south": 36.92,
         "north": 37}
-    fig = map_graph_static(sos23, map_bounds, h=600)
+    fig = map_graph(sos23, map_bounds, h=600, single_color=False)
     fig.write_image(os.path.join(image_dir, "Map_cigarette_butts_Santa_Cruz_2023" + ext))
 
     # Debris caused by smoking 2013-23
@@ -413,7 +405,7 @@ def make_and_save_graphs(sos_data, data_dir, ext='.png'):
         autosize=False,
         width=1000,
         height=600,
-        yaxis_title='Number of items per volunteer',
+        yaxis_title='Number of Items Per Volunteer',
         xaxis_title='Year',
         legend_title='Item Category',
     )

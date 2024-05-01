@@ -236,6 +236,40 @@ def map_graph(df, map_bounds=None, w=None, h=None, single_color=True):
     return fig
 
 
+def activity_graph(df, col_config):
+    col_sum = df.copy()
+    # Drop non-activity columns
+    nonitem_cols = list(col_config.loc[col_config['activity'].isnull()]['name'])
+    # Sum total items
+    col_sum.drop(nonitem_cols, axis=1, inplace=True)
+    col_sum = col_sum.sum(axis=0, numeric_only=True)
+    col_sum = col_sum.sort_values(ascending=False)
+    # Add activity to dataframe
+    col_sum = col_sum.to_frame(name='count')
+    col_sum.insert(0, 'name', col_sum.index)
+    col_sum.reset_index(drop=True, inplace=True)
+    col_sum = pd.merge(col_sum, col_config, how='left', on="name")
+    # Bar plot
+    fig = px.bar(col_sum, x='activity', y='count', color='name', text="name")
+    fig.update_layout(
+        autosize=False,
+        width=1000,
+        height=700,
+        title="Total Number of Items Collected By Activity, 2013-23",
+        yaxis_title='Total Number of Items',
+        xaxis_title='Activity',
+        legend_title='Item Category',
+        xaxis={'categoryorder': 'total descending'},
+    )
+    fig.update_traces(
+        textfont_size=10,
+        textangle=0,
+        textposition="inside",
+        cliponaxis=False,
+    )
+    return fig
+
+
 def make_and_save_graphs(sos_data, data_dir, ext='.png'):
     """
     Manipulate the data frame to extract features, plot graphs, and write
@@ -244,12 +278,12 @@ def make_and_save_graphs(sos_data, data_dir, ext='.png'):
 
     :param pd.DataFrame sos_data: SOS data collected over the years.
     :param str data_dir: Data directory
-    :param st ext: Graph file extention (default: '.png')
+    :param str ext: Graph file extention (default: '.png')
     """
     # Creates subdirectory for graphs
     image_dir = os.path.join(data_dir, "Graphs")
     os.makedirs(image_dir, exist_ok=True)
-    # Read config for columns (created when running cleanup main
+    # Read config for columns (created when running cleanup main)
     col_config = pd.read_csv(os.path.join(data_dir, 'sos_column_info.csv'))
     # find column names that do not correspond to items (material is nan)
     nonitem_cols = list(col_config.loc[col_config['material'].isnull()]['name'])
@@ -261,13 +295,13 @@ def make_and_save_graphs(sos_data, data_dir, ext='.png'):
 
     # Create bar graph for years 2013-23
     # Add Total Volunteers and Total Items to col config
-    col_config.loc[len(col_config.index)] = ['Total Volunteers', ['Adult + 0.5*Youth'], 'float', False, np.NaN]
-    col_config.loc[len(col_config.index)] = ['Total Items', ['Sum of items per event'], 'int', False, np.NaN]
+    col_config.loc[len(col_config.index)] = ['Total Volunteers', ['Adult + 0.5*Youth'], 'float', False, np.NaN, np.NaN]
+    col_config.loc[len(col_config.index)] = ['Total Items', ['Sum of items per event'], 'int', False, np.NaN, np.NaN]
     # ...and to dataframe
-    sos_data['Total Volunteers'] = sos_data['Adult Volunteers'].fillna(0) + 0.5 * sos_data['Youth Volunteers'].fillna(0)
     items = sos_data.copy()
     items.drop(nonitem_cols, axis=1, inplace=True)
     sos_data['Total Items'] = items.sum(axis=1, numeric_only=True)
+    sos_data['Total Volunteers'] = sos_data['Adult Volunteers'].fillna(0) + 0.5 * sos_data['Youth Volunteers'].fillna(0)
     # Group by year
     annual_data = cleanup.group_by_year(sos_data, col_config)
     # Sort items by sum in descending order so it's easier to decipher variables
@@ -411,6 +445,9 @@ def make_and_save_graphs(sos_data, data_dir, ext='.png'):
     )
     fig.write_image(os.path.join(image_dir, "Line_graph_smoking_per_volunteers_2013-23" + ext))
 
+    # Debris by activity
+    fig = activity_graph(sos_data, col_config)
+    fig.write_image(os.path.join(image_dir, "Debris_by_activity_2013-23" + ext))
 
 if __name__ == '__main__':
     args = cleanup.parse_args()

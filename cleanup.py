@@ -277,11 +277,14 @@ def read_col_config(column_config='column_categories.yml'):
         material = 'Mixed'
         required = False
         col_type = 'int'
+        activity = 'Various'
         if col_info is not None:
             if 'sources' in col_info:
                 source_names += col_info['sources']
             if 'material' in col_info:
                 material = col_info['material']
+            if 'activity' in col_info:
+                activity = col_info['activity']
             if 'required' in col_info and isinstance(col_info['required'], bool):
                 required = col_info['required']
             if 'type' in col_info and isinstance(col_info['type'], str):
@@ -291,13 +294,17 @@ def read_col_config(column_config='column_categories.yml'):
             'sources': source_names,
             'type': col_type,
             'required': required,
-            'material': material}
+            'material': material,
+            'activity': activity,
+        }
     # Add 'Other' to config as well
     config['Other'] = {
         'sources': ['Any items not in config'],
         'type': 'int',
         'required': False,
-        'material': 'Mixed'}
+        'material': 'Mixed',
+        'activity': 'Various',
+    }
     return config
 
 

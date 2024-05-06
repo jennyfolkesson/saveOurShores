@@ -548,7 +548,7 @@ def make_and_save_graphs(sos_data, col_config, data_dir, ext='.png'):
     # Get data from 2023 and make circle packing graph
     graph_maker.circle_packing_graph(
         plot_colors=None,
-        fig_name="Circle_packing_items_materials_2023",
+        fig_name="Circle_packing_items_materials_2013-23",
     )
     # All items over the years
     graph_maker.annual_total_bar(fig_name="Bar_graph_all_items_2013-23")
@@ -567,7 +567,7 @@ def make_and_save_graphs(sos_data, col_config, data_dir, ext='.png'):
     # Map of cigarette butt locations by number 2023
     graph_maker.cigarette_map(
         single_color=False,
-        fig_name="Map_cigarette_butts_by_location_2013-2023",
+        fig_name="Map_cigarette_butts_by_location_2013-23",
     )
     # Santa Cruz only
     map_bounds = {
@@ -579,7 +579,7 @@ def make_and_save_graphs(sos_data, col_config, data_dir, ext='.png'):
         map_bounds=map_bounds,
         h=600,
         single_color=False,
-        fig_name="Map_cigarette_butts_Santa_Cruz_2013-2023",
+        fig_name="Map_cigarette_butts_Santa_Cruz_2013-23",
     )
     # Debris caused by smoking 2013-23
     graph_maker.smoking_line_graph(fig_name="Line_graph_smoking_per_volunteers_2013-23")

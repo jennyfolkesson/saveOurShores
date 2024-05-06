@@ -78,6 +78,10 @@ Bandaids:
 Batteries:
   material: 'Metal'
   activity: 'Dumping/Disaster'
+Beverage Bottles:
+  sources: ['Beverage Bottles (Plastic)']
+  material: 'Plastic'
+  activity: "Eating/Drinking"
 Beverage Pouches:
   sources: ['Beverages Sachets/Pouches', 'Beverages Sachets']
   material: 'Plastic'
@@ -185,6 +189,10 @@ Glass Pieces:
   sources: ['Glass Pieces And Chunks', 'Pieces And Chunks']
   material: 'Glass'
   activity: 'Various'
+Lids:
+  sources: ['Lids (Plastic)', 'Plastic Lids']
+  material: 'Plastic'
+  activity: 'Various'
 Lighters:
   sources: ['Cigarette Lighters',
             'Disposable Lighters',
@@ -232,12 +240,7 @@ Plastic Bags:
 Plastic Bottles:
   sources: ['Other Plastic Bottles (Oil, Bleach, Etc.)',
             'Plastic Motor Oil Bottles',
-            'Other Plastic Bottles',
-            'Beverage Bottles (Plastic)']
-  material: 'Plastic'
-  activity: 'Various'
-Lids:
-  sources: ['Lids (Plastic)', 'Plastic Lids']
+            'Other Plastic Bottles']
   material: 'Plastic'
   activity: 'Various'
 Packaging:

@@ -39,7 +39,7 @@ def read_yml(yml_name):
 def group_by_year(df, col_config):
     """
     Take the dataframe containing entries from all year, group by year
-    and sum items.
+    and sum items. Sort by item sum in descending order.
 
     :param pd.Dataframe df: SOS data
     :param pd.DataFrame col_config: Column configuration including type, material
@@ -58,6 +58,10 @@ def group_by_year(df, col_config):
         errors='coerce')
     annual_data = annual_data.set_index('Date').rename_axis(None)
     annual_data = annual_data.groupby(annual_data.index.year).sum()
+    # Sort items by sum in descending order so it's easier to decipher variables
+    s = annual_data.sum()
+    s = s.sort_values(ascending=False)
+    annual_data = annual_data[s.index]
     return annual_data
 
 
@@ -438,6 +442,42 @@ def merge_data(data_dir):
     # Sort by date
     merged_data.sort_values(by='Date', inplace=True)
     return merged_data, config
+
+
+def read_data(data_dir):
+    """
+    Check if csv file for merged data exists and reads if it does, creates if
+    it doesn't. Also reads column info file.
+    Adds total volunteers (adult volunteers + 0.5 * youth volunteers) and
+    total items to dataframe.
+
+    :param str data_dir: Path to data directory
+    :return pd.DataFrame sos_data: Merged SOS data over all years
+    :return pd.DataFrame col_config: Column info (name, sources, type,
+        material, activity)
+    """
+    existing_file = glob.glob(os.path.join(data_dir, 'merged_sos_data.csv'))
+    if len(existing_file) == 1:
+        sos_data = pd.read_csv(existing_file[0])
+        sos_data['Date'] = pd.to_datetime(sos_data['Date'], errors='coerce')
+    else:
+        sos_data = cleanup.merge_data(data_dir)
+        sos_data.to_csv(os.path.join(data_dir, "merged_sos_data.csv"), index=False)
+
+    # Read config for columns (created when running cleanup main)
+    col_config = pd.read_csv(os.path.join(data_dir, 'sos_column_info.csv'))
+    # find column names that do not correspond to items (material is nan)
+    nonitem_cols = list(col_config.loc[col_config['material'].isnull()]['name'])
+    # Create bar graph for years 2013-23
+    # Add Total Volunteers and Total Items to col config
+    col_config.loc[len(col_config.index)] = ['Total Volunteers', ['Adult + 0.5*Youth'], 'float', False, np.NaN, np.NaN]
+    col_config.loc[len(col_config.index)] = ['Total Items', ['Sum of items per event'], 'int', False, np.NaN, np.NaN]
+    # ...and to dataframe
+    items = sos_data.copy()
+    items.drop(nonitem_cols, axis=1, inplace=True)
+    sos_data['Total Items'] = items.sum(axis=1, numeric_only=True)
+    sos_data['Total Volunteers'] = sos_data['Adult Volunteers'].fillna(0) + 0.5 * sos_data['Youth Volunteers'].fillna(0)
+    return sos_data, col_config
 
 
 if __name__ == '__main__':

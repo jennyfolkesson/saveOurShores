@@ -99,7 +99,7 @@ Bottle Caps:
             'Bottle Caps (Plastic)',
             'Bottle Caps (Metal)']
   material: 'Mixed'
-  activity: "Various"
+  activity: "Eating/Drinking"
 Cans:
   sources: ['Beverage Cans',
             'Beer Cans',

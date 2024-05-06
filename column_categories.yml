@@ -192,7 +192,7 @@ Glass Pieces:
 Lids:
   sources: ['Lids (Plastic)', 'Plastic Lids']
   material: 'Plastic'
-  activity: 'Various'
+  activity: 'Eating/Drinking'
 Lighters:
   sources: ['Cigarette Lighters',
             'Disposable Lighters',

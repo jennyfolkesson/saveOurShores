@@ -1,4 +1,5 @@
 import circlify
+import functools
 import glob
 import numpy as np
 import os
@@ -72,10 +73,18 @@ class GraphMaker:
         self.sos_sites = None
         self.sos_cigs = None
 
-    def write_fig(self, fig, fig_name):
-        file_path = os.path.join(self.image_dir, fig_name + self.ext)
-        fig.write_image(file_path)
+    def writes(func):
+        @functools.wraps(func)
+        def write_fig(self, *args, **kwargs) :
+            fig = func(self, *args, **kwargs)
+            if 'fig_name' in kwargs and kwargs['fig_name'] is not None:
+                file_path = os.path.join(self.image_dir, kwargs['fig_name'] + self.ext)
+                fig.write_image(file_path)
+            return fig
+        return write_fig
 
+
+    @writes
     def circle_packing_graph(self,
                              min_items=None,
                              plot_colors=None,
@@ -215,10 +224,9 @@ class GraphMaker:
             plot_bgcolor="rgba(0,0,0,0)",
             title=fig_title,
         )
-        if fig_name is not None:
-            self.write_fig(fig, fig_name)
         return fig
 
+    @writes
     def annual_total_bar(self, item_nbr=None, fig_name=None):
         """
         Bar plot of total number of items collected over all years. Either all item categories
@@ -246,10 +254,9 @@ class GraphMaker:
             xaxis_title='Year',
             legend_title='Item Category',
         )
-        if fig_name is not None:
-            self.write_fig(fig, fig_name)
         return fig
 
+    @writes
     def annual_volunteers(self, fig_name=None):
         """
         Bar graph showing total number of volunteers over the years.
@@ -270,10 +277,9 @@ class GraphMaker:
             xaxis_title='Year',
         )
         fig.update_traces(marker_color=self.sos_blue)
-        if fig_name is not None:
-            self.write_fig(fig, fig_name)
         return fig
 
+    @writes
     def item_per_volunteer(self, fig_name=None):
         """
         Line graph of number of trash items collected per volunteer over the years.
@@ -296,8 +302,6 @@ class GraphMaker:
             xaxis_title='Year',
             legend_title='Item Category',
         )
-        if fig_name is not None:
-            self.write_fig(fig, fig_name)
         return fig
 
     def make_sos_sites(self):
@@ -315,6 +319,7 @@ class GraphMaker:
         sos_sites = sos_sites.groupby('Cleanup Site').sum()
         self.sos_sites = sos_sites.reset_index()
 
+    @writes
     def volunteers_by_site(self, fig_name=None):
         """
         Bar graph of top 25 sites where the most volunteers participated in cleanups.
@@ -344,10 +349,9 @@ class GraphMaker:
             xaxis_title='Total Number of Volunteers',
             yaxis={'categoryorder': 'total ascending'}
         )
-        if fig_name is not None:
-            self.write_fig(fig, fig_name)
         return fig
 
+    @writes
     def items_by_site(self, fig_name=None):
         """
         Bar graph of top 25 sites with the most trash items collected.
@@ -377,8 +381,6 @@ class GraphMaker:
             xaxis_title='Total Number of Items',
             yaxis={'categoryorder': 'total ascending'}
         )
-        if fig_name is not None:
-            self.write_fig(fig, fig_name)
         return fig
 
     def make_sos_cigs(self, cig_df):
@@ -393,6 +395,7 @@ class GraphMaker:
         coords = pd.read_csv(os.path.join(self.data_dir, 'cleanup_site_coordinates.csv'))
         self.sos_cigs = pd.merge(self.sos_cigs, coords, how='left', on="Cleanup Site")
 
+    @writes
     def cigarette_map(self,
                       year=None,
                       map_bounds=None,
@@ -457,15 +460,13 @@ class GraphMaker:
                 color_continuous_scale='Sunsetdark',
                 zoom=8,
             )
-
         fig.update_layout(mapbox_style="carto-positron")
         fig.update_layout(margin={"r": 0.1, "t": 0.1, "l": 0.1, "b": 0.1})
         fig.update_layout(mapbox_bounds=map_bounds)
         fig.update_layout(autosize=False, width=w, height=h)
-        if fig_name is not None:
-            self.write_fig(fig, fig_name)
         return fig
 
+    @writes
     def activity_graph(self, fig_name=None):
         """
         Bar graph where trash items are sorted by activity. Activities are defined in the
@@ -505,10 +506,9 @@ class GraphMaker:
             textposition="inside",
             cliponaxis=False,
         )
-        if fig_name is not None:
-            self.write_fig(fig, fig_name)
         return fig
 
+    @writes
     def smoking_line_graph(self, fig_name=None):
         """
         Line graph showing smoking related trash items over the years.
@@ -528,8 +528,6 @@ class GraphMaker:
             xaxis_title='Year',
             legend_title='Item Category',
         )
-        if fig_name is not None:
-            self.write_fig(fig, fig_name)
         return fig
 
 
@@ -546,26 +544,26 @@ def make_and_save_graphs(sos_data, col_config, data_dir, ext='.png'):
     """
     graph_maker = GraphMaker(data_dir, sos_data, col_config, ext)
     # Get data from 2023 and make circle packing graph
-    graph_maker.circle_packing_graph(
+    _ = graph_maker.circle_packing_graph(
         plot_colors=None,
         fig_name="Circle_packing_items_materials_2013-23",
     )
     # All items over the years
-    graph_maker.annual_total_bar(fig_name="Bar_graph_all_items_2013-23")
+    _ = graph_maker.annual_total_bar(fig_name="Bar_graph_all_items_2013-23")
     # Top 5 items over the years
-    graph_maker.annual_total_bar(item_nbr=5, fig_name="Bar_graph_top_5_items_2013-23")
+    _ = graph_maker.annual_total_bar(item_nbr=5, fig_name="Bar_graph_top_5_items_2013-23")
     # Annual volunteers
-    graph_maker.annual_volunteers(fig_name="Bar_graph_number_volunteers_2013-23")
+    _ = graph_maker.annual_volunteers(fig_name="Bar_graph_number_volunteers_2013-23")
     # Number of item per volunteer line graph 2013-23
-    graph_maker.item_per_volunteer(
+    _ = graph_maker.item_per_volunteer(
         fig_name="Line_graph_number_items_per_volunteers_2013-23",
     )
     # Number of volunteers by site 2013-23
-    graph_maker.volunteers_by_site(fig_name="Bar_graph_top25_sites_by_volunteers_2013-23")
+    _ = graph_maker.volunteers_by_site(fig_name="Bar_graph_top25_sites_by_volunteers_2013-23")
     # Select top 25 sites with most items cleaned up
-    graph_maker.items_by_site(fig_name="Bar_graph_top25_sites_by_items_2013-23")
+    _ = graph_maker.items_by_site(fig_name="Bar_graph_top25_sites_by_items_2013-23")
     # Map of cigarette butt locations by number 2023
-    graph_maker.cigarette_map(
+    _ = graph_maker.cigarette_map(
         single_color=False,
         fig_name="Map_cigarette_butts_by_location_2013-23",
     )
@@ -582,12 +580,12 @@ def make_and_save_graphs(sos_data, col_config, data_dir, ext='.png'):
         fig_name="Map_cigarette_butts_Santa_Cruz_2013-23",
     )
     # Debris caused by smoking 2013-23
-    graph_maker.smoking_line_graph(fig_name="Line_graph_smoking_per_volunteers_2013-23")
+    _ = graph_maker.smoking_line_graph(fig_name="Line_graph_smoking_per_volunteers_2013-23")
     # Debris by activity
-    graph_maker.activity_graph(fig_name="Debris_by_activity_2013-23")
+    _ = graph_maker.activity_graph(fig_name="Debris_by_activity_2013-23")
 
 
 if __name__ == '__main__':
-    args = cleanup.parse_args()
-    sos_data, col_config = cleanup.read_data(args.dir)
-    make_and_save_graphs(sos_data, col_config, args.dir)
+    parsed_args = cleanup.parse_args()
+    sos_data, col_config = cleanup.read_data(parsed_args.dir)
+    make_and_save_graphs(sos_data, col_config, parsed_args.dir)

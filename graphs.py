@@ -18,6 +18,7 @@ PLOT_COLORS = {
     'Glass': 'yellow',
     'Metal': 'orange',
     'Plastic': 'red',
+    'Cloth': 'pink',
 }
 
 def treemap_graph(annual_data, color_scale=None):
@@ -58,7 +59,7 @@ class GraphMaker:
                  ext='.png'):
 
         self.sos_blue = '#00b5e2'
-        self.data_dir=data_dir
+        self.data_dir = data_dir
         self.sos_data = sos_data
         self.sos23 = sos_data[sos_data['Date'].dt.year == 2023]
         self.col_config = col_config
@@ -82,7 +83,6 @@ class GraphMaker:
                 fig.write_image(file_path)
             return fig
         return write_fig
-
 
     @writes
     def circle_packing_graph(self,
@@ -110,7 +110,7 @@ class GraphMaker:
                 "plot_colors must be string corresponding to plotly colormap"
             plot_colors = plotly.colors.sample_colorscale(
                 plot_colors,
-                samplepoints=5,
+                samplepoints=6,
                 low=0,
                 high=1,
                 colortype='rgb',
@@ -121,6 +121,7 @@ class GraphMaker:
                 'Glass': plot_colors[2],
                 'Metal': plot_colors[3],
                 'Plastic': plot_colors[4],
+                'Cloth': plot_colors[5],
             }
         else:
             plot_colors = PLOT_COLORS
@@ -289,7 +290,8 @@ class GraphMaker:
         """
         annual_volunteer = self.annual_data.copy()
         # Normalize by total volunteers
-        annual_volunteer[self.item_cols] = annual_volunteer[self.item_cols].div(annual_volunteer['Total Volunteers'], axis=0)
+        annual_volunteer[self.item_cols] = \
+            annual_volunteer[self.item_cols].div(annual_volunteer['Total Volunteers'], axis=0)
         # Make sure that items numbers are sorted in descending order
         annual_volunteer = annual_volunteer[annual_volunteer.columns.intersection(self.item_cols)]
         fig = px.line(annual_volunteer, x=annual_volunteer.index, y=annual_volunteer.columns)
@@ -303,6 +305,46 @@ class GraphMaker:
             legend_title='Item Category',
         )
         return fig
+
+    @writes
+    def material_per_volunteer(self, fig_name=None):
+        """
+        Line graph of number of trash items grouped by material collected per volunteer
+        over the years.
+
+        :param str fig_name: If not None, save fig with given name
+        :return px.line fig: Plotly line figure
+        """
+        annual_volunteer = self.annual_data.copy()
+        annual_volunteer[self.item_cols] = \
+            annual_volunteer[self.item_cols].div(annual_volunteer['Total Volunteers'], axis=0)
+        annual_volunteer['Year'] = annual_volunteer.index
+        annual_volunteer = annual_volunteer.T
+        annual_volunteer['name'] = annual_volunteer.index
+        annual_volunteer = pd.merge(annual_volunteer, self.col_config, how='left', on="name")
+        annual_volunteer = annual_volunteer.groupby(['material']).sum()
+        annual_volunteer.drop(
+            ['name', 'sources', 'type', 'required', 'activity'], axis=1, inplace=True,
+        )
+        annual_volunteer = annual_volunteer.T
+        annual_volunteer.index.rename("Year", inplace=True)
+        # Sort by amount
+        col_sum = annual_volunteer.sum(axis=0, numeric_only=True)
+        col_sum = col_sum.sort_values(ascending=False)
+        annual_volunteer = annual_volunteer[col_sum.index]
+        # Plot line graph
+        fig = px.line(annual_volunteer, x=annual_volunteer.index, y=annual_volunteer.columns)
+        fig.update_layout(
+            autosize=False,
+            width=1000,
+            height=700,
+            title="Trash Items By Material Per Volunteer For the Years 2013-23",
+            yaxis_title='Number of Items Per Volunteer By Material',
+            xaxis_title='Year',
+            legend_title='Material',
+        )
+        return fig
+
 
     def make_sos_sites(self):
         """
@@ -383,7 +425,7 @@ class GraphMaker:
         )
         return fig
 
-    def make_sos_cigs(self, cig_df):
+    def make_sos_cigs(self, cig_df, fig_name=None):
         """
         Helper function to create dataframe with cigarette butt data
         """
@@ -531,17 +573,18 @@ class GraphMaker:
         return fig
 
 
-def make_and_save_graphs(sos_data, col_config, data_dir, ext='.png'):
+def make_and_save_graphs(data_dir, ext='.png'):
     """
     Manipulate the data frame to extract features, plot graphs, and write
     them to an output directory, which is a subdirectory of the input data directory
     named 'Graphs'.
 
-    :param pd.DataFrame sos_data: SOS data collected over the years.
-    :param pd.DataFrame col_config: Column information
     :param str data_dir: Data directory
     :param str ext: Graph file extention (default: '.png')
     """
+    # Read collected data and config as dataframes
+    sos_data, col_config = cleanup.read_data(data_dir)
+    # Instantiate graph maker
     graph_maker = GraphMaker(data_dir, sos_data, col_config, ext)
     # Get data from 2023 and make circle packing graph
     _ = graph_maker.circle_packing_graph(
@@ -557,6 +600,10 @@ def make_and_save_graphs(sos_data, col_config, data_dir, ext='.png'):
     # Number of item per volunteer line graph 2013-23
     _ = graph_maker.item_per_volunteer(
         fig_name="Line_graph_number_items_per_volunteers_2013-23",
+    )
+    # Items grouped by material
+    _ = graph_maker.material_per_volunteer(
+        fig_name="Line_graph_material_per_volunteers_2013-23",
     )
     # Number of volunteers by site 2013-23
     _ = graph_maker.volunteers_by_site(fig_name="Bar_graph_top25_sites_by_volunteers_2013-23")
@@ -587,5 +634,4 @@ def make_and_save_graphs(sos_data, col_config, data_dir, ext='.png'):
 
 if __name__ == '__main__':
     parsed_args = cleanup.parse_args()
-    sos_data, col_config = cleanup.read_data(parsed_args.dir)
-    make_and_save_graphs(sos_data, col_config, parsed_args.dir)
+    make_and_save_graphs(parsed_args.dir)

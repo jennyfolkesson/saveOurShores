@@ -67,6 +67,7 @@ Appliances:
   activity: 'Dumping/Disaster'
 Bagged Pet Waste:
   sources: ['Dog Poop Bags']
+  material: 'Plastic'
   activity: "Recreation"
 Balloons:
   sources: ['Balloons Or Ribbon']
@@ -74,6 +75,7 @@ Balloons:
   activity: "Recreation"
 Bandaids:
   sources: ['Bandaids Or Bandages']
+  material: 'Mixed'
   activity: "Hygiene"
 Batteries:
   material: 'Metal'
@@ -88,10 +90,11 @@ Beverage Pouches:
   activity: "Eating/Drinking"
 Beach Gear:
   sources: ['Toys And Beach Accessories', 'Beach Chairs, Toys Umbrellas', 'Sunglasses']
+  material: 'Mixed'
   activity: "Recreation"
 Bikes:
   sources: ['Bikes Or Bike Parts']
-  material: 'Metal'
+  material: 'Mixed'
   activity: "Recreation"
 Bottle Caps:
   sources: ['Bottle Caps And Rings',
@@ -112,6 +115,7 @@ Cans:
   material: 'Metal'
   activity: "Eating/Drinking"
 Car Parts:
+  material: 'Mixed'
   activity: 'Dumping/Disaster'
 Cigar Tips:
   activity: 'Smoking'
@@ -120,6 +124,7 @@ Cigarette Butts:
   activity: 'Smoking'
 Clothes:
   sources: ['Clothes, Cloth', 'Clothes Or Towels']
+  material: 'Cloth'
   activity: 'Recreation'
 Construction Materials:
   sources: []
@@ -131,6 +136,7 @@ E-Waste:
   activity: 'Smoking'
 Fireworks:
   sources: ['Fireworkds']
+  material: 'Mixed'
   activity: 'Recreation'
 Fishing Gear:
   sources: ['Fishing Gear (Lures, Nets, Etc.)',
@@ -146,6 +152,14 @@ Fishing Gear:
             'Fishing Line']
   material: 'Mixed'
   activity: 'Fishing'
+Paper Food Containers:
+  sources: ['Paper Food Containers, Cups, Plates',
+            'Paper Food Containers, Cups, Plates, Bowls',
+            'Paper/ Cardboard Food Containers, Cups, Plates, Bowls',
+            'Cups, Plates (Paper)',
+            'Cups & Plates (Paper)']
+  material: 'Wood'
+  activity: 'Eating/Drinking'
 Food Containers:
   sources: ['Food Containers, Cups, Plates, Bowls',
             'Food Containers (Plastic)',
@@ -169,7 +183,7 @@ Food Containers:
             'Cups & Plates (Foam)',
             'Plastic Cups, Lids, Plates, Utensils',
             'Styrofoam Cups, Plates And Bowls New']
-  material: 'Mixed'
+  material: 'Plastic'
   activity: 'Eating/Drinking'
 Food Wrappers:
   sources: ['Plastic Food Wrappers',
@@ -180,6 +194,7 @@ Food Wrappers:
   activity: 'Eating/Drinking'
 Footwear:
   sources: ['Footwear (Shoes/Slippers)', 'Shoes']
+  material: 'Mixed'
   activity: 'Recreation'
 Glass Bottles:
   sources: ['Beverage Bottles (Glass)']
@@ -274,6 +289,7 @@ PPE:
   activity: 'Hygiene'
 Rope:
   sources: ['Rope (Yard Pieces)', 'Rope', 'Rope (1 Yard/Meter = 1 Piece)']
+  material: 'Mixed'
   activity: 'Various'
 Strapping Bands:
   activity: 'Various'
@@ -295,6 +311,7 @@ Tobacco:
             'Smoking, Tobacco, Vape Items (Not Butts)',
             'Cigarette Box Or Wrappers',
             'Other Tobacco (Packaging, Lighter, Etc.)']
+  material: 'Mixed'
   activity: 'Smoking'
 Utensils:
   sources: ['Utensils (Plastic)', 'Forks, Knives, Spoons']

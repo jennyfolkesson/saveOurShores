@@ -188,19 +188,23 @@ class GraphMaker:
                           )
             nbr_items = int(col_sum.iloc[idx])
             txt = ''
-            hovertxt = "{} <br> {}".format(item, str(nbr_items))
+            hovertxt = "{} <br> {}".format(item, f'{nbr_items:,}')
             # Text gets messy if circle is too small
             # TODO: compare text length to radius
-            if nbr_items > 7 * min_items or \
-                    (nbr_items > min_items and len(txt) < 30):
+            font_sz = 10
+            if r > .05:
                 txt = hovertxt
+            if r > .2:
+                font_sz = 14
+            elif r > .10:
+                font_sz = 12
             fig.add_annotation(
                 x=x,
                 y=y,
                 text=txt,
                 hovertext=hovertxt,
                 showarrow=False,
-                font_size=10,
+                font_size=font_sz,
             )
 
         for material in plot_colors.keys():

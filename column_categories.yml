@@ -97,15 +97,18 @@ Bikes:
   material: 'Mixed'
   activity: "Recreation"
 Bottle Caps:
-  sources: ['Bottle Caps And Rings',
-            'Metal Bottle Caps',
-            'Plastic Bottle Caps And Rings',
-            'Plastic Bottle Caps Or Rings',
+  sources: ['Metal Bottle Caps',
             'Metal Bottle Caps Or Can Pulls',
             'Metal Can Pulls/Tags',
-            'Bottle Caps (Plastic)',
             'Bottle Caps (Metal)']
-  material: 'Mixed'
+  material: 'Metal'
+  activity: "Eating/Drinking"
+Plastic Bottle Caps:
+  sources: ['Bottle Caps And Rings',
+            'Plastic Bottle Caps And Rings',
+            'Plastic Bottle Caps Or Rings',
+            'Bottle Caps (Plastic)']
+  material: 'Plastic'
   activity: "Eating/Drinking"
 Cans:
   sources: ['Beverage Cans',
@@ -152,7 +155,7 @@ Fishing Gear:
             'Fishing Line']
   material: 'Mixed'
   activity: 'Fishing'
-Paper Food Containers:
+Food Containers:
   sources: ['Paper Food Containers, Cups, Plates',
             'Paper Food Containers, Cups, Plates, Bowls',
             'Paper/ Cardboard Food Containers, Cups, Plates, Bowls',
@@ -160,14 +163,11 @@ Paper Food Containers:
             'Cups & Plates (Paper)']
   material: 'Wood'
   activity: 'Eating/Drinking'
-Food Containers:
+Plastic Food Containers:
   sources: ['Food Containers, Cups, Plates, Bowls',
             'Food Containers (Plastic)',
             'Food Containers (Foam)',
             'Food Containers/ Cups/ Plates/ Bowls',
-            'Paper Food Containers, Cups, Plates',
-            'Paper Food Containers, Cups, Plates, Bowls',
-            'Paper/ Cardboard Food Containers, Cups, Plates, Bowls',
             'Plastic Polystyrene Cups/Plates/Bowls (Foam)',
             'Plastic Cups, Lids/Plates/Utensils',
             'Plastic Food Containers',
@@ -175,14 +175,19 @@ Food Containers:
             'Polystyrene Foodware (Foam)',
             'Styrofoam Food Containers',
             'Styrofoam Cups, Plates And Bowls ',
-            'Cups, Plates (Paper)',
             'Cups, Plates (Plastic)',
             'Cups, Plates (Foam)',
-            'Cups & Plates (Paper)',
             'Cups & Plates (Plastic)',
             'Cups & Plates (Foam)',
             'Plastic Cups, Lids, Plates, Utensils',
-            'Styrofoam Cups, Plates And Bowls New']
+            'Styrofoam Cups, Plates And Bowls New',
+            'Plastic To-Go Items',
+            'Plastic Polystyrene Food "To-Go" Containers',
+            'Take Out/Away Containers (Foam)',
+            'Take Out/Away Containers (Plastic)',
+            'Take Out/Away (Plastic',
+            'Take Out/Away (Foam)',
+  ]
   material: 'Plastic'
   activity: 'Eating/Drinking'
 Food Wrappers:
@@ -273,15 +278,6 @@ Plastic Pieces:
             'Foam Pieces']
   material: 'Plastic'
   activity: 'Various'
-To-Go Items:
-  sources: ['Plastic To-Go Items',
-            'Plastic Polystyrene Food "To-Go" Containers',
-            'Take Out/Away Containers (Foam)',
-            'Take Out/Away Containers (Plastic)',
-            'Take Out/Away (Plastic',
-            'Take Out/Away (Foam)']
-  material: 'Plastic'
-  activity: 'Eating/Drinking'
 PPE:
   sources: ['Personal Protective Equipment (Masks, Gloves)',
             'Personal Protective Equipment']

@@ -36,35 +36,6 @@ def read_yml(yml_name):
     return config
 
 
-def group_by_year(df, col_config):
-    """
-    Take the dataframe containing entries from all year, group by year
-    and sum items. Sort by item sum in descending order.
-
-    :param pd.Dataframe df: SOS data
-    :param pd.DataFrame col_config: Column configuration including type, material
-    :return pd.DataFrame annual_data: SOS data grouped by year
-    """
-    annual_data = df.copy()
-    # Compute total of columns
-    nonnumeric_cols = list(
-        col_config.loc[~col_config['type'].isin(['int', 'float'])]['name'],
-    )
-    nonnumeric_cols.remove('Date')
-    annual_data.drop(nonnumeric_cols, axis=1, inplace=True)
-    annual_data['Date'] = pd.to_datetime(
-        annual_data['Date'],
-        format='%Y-%m-%d',
-        errors='coerce')
-    annual_data = annual_data.set_index('Date').rename_axis(None)
-    annual_data = annual_data.groupby(annual_data.index.year).sum()
-    # Sort items by sum in descending order so it's easier to decipher variables
-    s = annual_data.sum()
-    s = s.sort_values(ascending=False)
-    annual_data = annual_data[s.index]
-    return annual_data
-
-
 def orient_data(sos_data):
     """
     Some of the older datasets have items as rows and cleanups as columns.

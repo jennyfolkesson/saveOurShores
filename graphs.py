@@ -70,7 +70,7 @@ class GraphMaker:
         self.image_dir = os.path.join(data_dir, "Graphs")
         os.makedirs(self.image_dir, exist_ok=True)
         # Group by year
-        self.annual_data = cleanup.group_by_year(sos_data, col_config)
+        self.annual_data = self.group_by_year(sos_data)
         self.sos_sites = None
         self.sos_cigs = None
 
@@ -83,6 +83,29 @@ class GraphMaker:
                 fig.write_image(file_path)
             return fig
         return write_fig
+
+    def group_by_year(self, df):
+        """
+        Take the dataframe containing entries from all year, group by year
+        and sum items. Sort by item sum in descending order.
+
+        :param pd.Dataframe df: SOS data
+        :return pd.DataFrame annual_data: SOS data grouped by year
+        """
+        annual_data = df.copy()
+        # Compute total of columns
+        nonnumeric_cols = list(
+            self.col_config.loc[~self.col_config['type'].isin(['int', 'float'])]['name'],
+        )
+        nonnumeric_cols.remove('Date')
+        annual_data.drop(nonnumeric_cols, axis=1, inplace=True)
+        annual_data = annual_data.set_index('Date').rename_axis(None)
+        annual_data = annual_data.groupby(annual_data.index.year).sum()
+        # Sort items by sum in descending order so it's easier to decipher variables
+        s = annual_data.sum()
+        s = s.sort_values(ascending=False)
+        annual_data = annual_data[s.index]
+        return annual_data
 
     @writes
     def circle_packing_graph(self,
@@ -129,14 +152,14 @@ class GraphMaker:
         if year is None:
             # Default is all years
             col_sum = self.sos_data.copy()
-            fig_title = "Total Number of Items Collected By Category and Material 2013-2023"
+            fig_title = "Number of Debris Items Collected By Category and Material 2013-2023"
         elif year == 2023:
             col_sum = self.sos23.copy()
-            fig_title = "Total Number of Items Collected By Category and Material in 2023"
+            fig_title = "Number of Debris Items Collected By Category and Material in 2023"
         else:
             assert 2013 <= year <= 2023, "Year must be within 2013-2023"
             col_sum = self.sos_data[sos_data['Date'].dt.year == year]
-            fig_title = "Total Number of Items Collected By Category and Material in {}".format(year)
+            fig_title = "Number of Debris Items Collected By Category and Material in {}".format(year)
 
         # Compute total of columns
         col_sum.drop(self.nonitem_cols, axis=1, inplace=True)
@@ -191,13 +214,15 @@ class GraphMaker:
             hovertxt = "{} <br> {}".format(item, f'{nbr_items:,}')
             # Text gets messy if circle is too small
             # TODO: compare text length to radius
-            font_sz = 10
+            font_sz = 8
             if r > .05:
                 txt = hovertxt
             if r > .2:
                 font_sz = 14
             elif r > .10:
                 font_sz = 12
+            elif r > .75:
+                font_sz = 10
             fig.add_annotation(
                 x=x,
                 y=y,
@@ -242,12 +267,12 @@ class GraphMaker:
         :return px.fig fig: Bar plot of total trash items
         """
         annual_items = self.annual_data[self.annual_data.columns.intersection(self.item_cols)]
-        fig_title = "Total Number of Items Collected By Category, 2013-23"
+        fig_title = "Total Number of Debris Items Collected By Category, 2013-23"
         if item_nbr is not None:
             assert item_nbr < annual_items.shape[1], \
                 'item_nbr must be smaller than total number of items'
             annual_items = annual_items.iloc[:, :item_nbr]
-            fig_title = "Top {} Number of Items Collected By Category, 2013-23".format(item_nbr)
+            fig_title = "Top {} Number of Debris Items Collected By Category, 2013-23".format(item_nbr)
 
         fig = px.bar(annual_items, x=annual_items.index, y=annual_items.columns)
         fig.update_layout(
@@ -255,9 +280,9 @@ class GraphMaker:
             width=1000,
             height=700,
             title=fig_title,
-            yaxis_title='Total Number of Items By Category',
+            yaxis_title='Number of Debris Items',
             xaxis_title='Year',
-            legend_title='Item Category',
+            legend_title='Debris Category',
         )
         return fig
 
@@ -303,10 +328,10 @@ class GraphMaker:
             autosize=False,
             width=1000,
             height=700,
-            title="Number of Items Collected Per Volunteer For the Years 2013-23",
-            yaxis_title='Number of Items Per Volunteer By Category',
+            title="Debris Items Collected Per Volunteer For the Years 2013-23",
+            yaxis_title='Number of Items Per Volunteer',
             xaxis_title='Year',
-            legend_title='Item Category',
+            legend_title='Debris Category',
         )
         return fig
 
@@ -342,8 +367,8 @@ class GraphMaker:
             autosize=False,
             width=1000,
             height=700,
-            title="Trash Items By Material Per Volunteer For the Years 2013-23",
-            yaxis_title='Number of Items Per Volunteer By Material',
+            title="Debris Items By Material Per Volunteer For the Years 2013-23",
+            yaxis_title='Number of Items Per Volunteer',
             xaxis_title='Year',
             legend_title='Material',
         )
@@ -422,7 +447,7 @@ class GraphMaker:
             autosize=False,
             width=1000,
             height=800,
-            title="Top 25 Cleanup Sites By Number of Items 2013-23",
+            title="Top 25 Cleanup Sites By Number of Debris Items 2013-23",
             yaxis_title='Cleanup Site',
             xaxis_title='Total Number of Items',
             yaxis={'categoryorder': 'total ascending'}
@@ -513,6 +538,76 @@ class GraphMaker:
         return fig
 
     @writes
+    def smoking_line_graph(self, fig_name=None):
+        """
+        Line graph showing smoking related trash items over the years.
+
+        :param str fig_name: If not None, save fig with given name
+        :return go.Figure fig: Plotly line figure
+        """
+        annual_smoking = self.annual_data[['Cigarette Butts', 'Cigar Tips', 'E-Waste', 'Tobacco', 'Lighters']].copy()
+        annual_smoking = annual_smoking.div(self.annual_data['Total Volunteers'], axis=0)
+        fig = px.line(annual_smoking, x=annual_smoking.index,
+                      y=['Cigarette Butts', 'Cigar Tips', 'E-Waste', 'Tobacco', 'Lighters'])
+        fig.update_layout(
+            autosize=False,
+            width=1000,
+            height=600,
+            title='Smoking Debris Items Per Volunteer',
+            yaxis_title='Number of Items Per Volunteer',
+            xaxis_title='Year',
+            legend_title='Debris Category',
+        )
+        return fig
+
+    @writes
+    def smoking_state_beaches(self, fig_name=None):
+        """
+        Line graph showing number of cigarette butts collected per volunteer at
+        state vs none state beaches over time. A vertical line marks where smoking
+        was banned on state beaches.
+
+        :param str fig_name: If not None, save fig with given name
+        :return go.Figure fig: Plotly line figure
+        """
+        df = self.sos_data[self.sos_data['Cleanup Site'].str.contains('Beach')]
+        # Remove Capitola and Cowell since they banned smoking in 2004
+        df = df[~df['Cleanup Site'].str.contains('Capitola')]
+        df = df[~df['Cleanup Site'].str.contains('Cowell')]
+        # Group into state and non state beaches by word search in site name
+        df_state = df[df['Cleanup Site'].str.contains('State')]
+        df_notstate = df[~df['Cleanup Site'].str.contains('State')]
+        # Group data by year
+        df_state = self.group_by_year(df_state)
+        df_notstate = self.group_by_year(df_notstate)
+        # Adjust cigarette butts by number of volunteers since they're correlated
+        df_state['Cigarette Butts'] = \
+            df_state['Cigarette Butts'].div(df_state['Total Volunteers'], axis=0)
+        df_notstate['Cigarette Butts'] = \
+            df_notstate['Cigarette Butts'].div(df_notstate['Total Volunteers'], axis=0)
+        # Make figure
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=df_state.index, y=df_state["Cigarette Butts"], name='State'))
+        fig.add_trace(go.Scatter(
+            x=df_notstate.index, y=df_notstate["Cigarette Butts"], name='Not State'))
+        fig.update_layout(
+            autosize=False,
+            width=1000,
+            height=600,
+            title='Cigarette Butts Per Volunteer on State vs Not State Beaches',
+            yaxis_title='Cigarette Butts Per Volunteer',
+            xaxis_title='Year',
+            legend_title='Beach Type'
+        )
+        # Smoking ban came into effect in the beginning of 2020 so all data collected
+        # in 2020 was after the ban
+        fig.add_vline(x=2019.5, line_dash="dot",
+                      annotation_text="Smoking Ban",
+                      annotation_position="top right")
+        return fig
+
+    @writes
     def activity_graph(self, fig_name=None):
         """
         Bar graph where trash items are sorted by activity. Activities are defined in the
@@ -540,10 +635,10 @@ class GraphMaker:
             autosize=False,
             width=1000,
             height=700,
-            title="Total Number of Items Collected By Activity, 2013-23",
+            title="Number of Debris Items Collected By Activity, 2013-23",
             yaxis_title='Total Number of Items',
             xaxis_title='Activity',
-            legend_title='Item Category',
+            legend_title='Debris Category',
             xaxis={'categoryorder': 'total descending'},
         )
         fig.update_traces(
@@ -551,28 +646,6 @@ class GraphMaker:
             textangle=0,
             textposition="inside",
             cliponaxis=False,
-        )
-        return fig
-
-    @writes
-    def smoking_line_graph(self, fig_name=None):
-        """
-        Line graph showing smoking related trash items over the years.
-
-        :param str fig_name: If not None, save fig with given name
-        :return go.Figure fig: Plotly line figure
-        """
-        annual_smoking = self.annual_data[['Cigarette Butts', 'Cigar Tips', 'E-Waste', 'Tobacco', 'Lighters']].copy()
-        annual_smoking = annual_smoking.div(self.annual_data['Total Volunteers'], axis=0)
-        fig = px.line(annual_smoking, x=annual_smoking.index,
-                      y=['Cigarette Butts', 'Cigar Tips', 'E-Waste', 'Tobacco', 'Lighters'])
-        fig.update_layout(
-            autosize=False,
-            width=1000,
-            height=600,
-            yaxis_title='Number of Items Per Volunteer',
-            xaxis_title='Year',
-            legend_title='Item Category',
         )
         return fig
 
@@ -632,6 +705,8 @@ def make_and_save_graphs(data_dir, ext='.png'):
     )
     # Debris caused by smoking 2013-23
     _ = graph_maker.smoking_line_graph(fig_name="Line_graph_smoking_per_volunteers_2013-23")
+    # Cigarette butts on state beaches
+    _ = graph_maker.smoking_state_beaches(fig_name="Line_graph_cigarettes_state_beaches_2013-23")
     # Debris by activity
     _ = graph_maker.activity_graph(fig_name="Debris_by_activity_2013-23")
 

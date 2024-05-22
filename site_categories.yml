@@ -12,7 +12,7 @@
 'Carmel River State Beach':  'Carmel River'
 'Corcoran Lagoon': ['Corcoran', 'Corcoron', '26Th']
 'Coyote Creek': 'Coyote Creek'
-'Cowell/Main Beach': ['Cowell', 'Coewll', 'Santa Cruz Main Beach', 'Main Beach']
+'Cowell/Main Beach': ['Cowell', 'Coewll', 'Santa Cruz Main Beach', 'Main Beach', 'Cowel']
 'Davenport Landing Beach': 'Davenport Landing'
 'Davenport Main Beach': ['Davenport Main', 'Davenport Beach']
 'Del Monte Beach': 'Del Monte'
@@ -47,22 +47,23 @@
 'Pajaro River': 'Pajaro River'
 'Palm Beach State Park': 'Palm'
 'Panther State Beach': 'Panther'
-'Pleasure Point Beaches': 'Pleasure Point'
+'Pleasure Point Beaches': ['Pleasure Point', 'The Hook']
 'Point Lobos State Natural Reserve': ['Point Lobos']
 'Rio Del Mar State Beach': 'Rio Del Mar'
-'Salinas River National Wildlife Refuge': ['Salinas River National', 'Salinas River Wildlife']
-'Salinas River State Beach': ['Salinas River State', 'Salinas River Beach']
+'Salinas River National Wildlife Refuge': ['Salinas River National', 'Salinas River Wildlife', 'Salinas River Nwr']
+'Salinas River State Beach': ['Salinas River State', 'Salinas River Beach', 'Salinas State River']
 'San Carlos Beach': 'San Carlos'
 'Sand City Beach': ['Sand City', 'Tioga']
 'Santa Cruz Harbor': 'Santa Cruz Harbor'
 'Santa Cruz Wharf': ['Santa Cruz Wharf', 'Santa Cruz Municipal Wharf', 'Sc Wharf']
 'Seabright State Beach': 'Seabright'
-'Seacliff State Beach': 'Seacliff'
+'Seacliff State Beach': ['Seacliff', 'Sea Cliff']
 'Seascape Beach': 'Seascape'
 'Seven-Mile Beach': ['Seven-Mile', '7 Mile', '7-Mile', 'Seven Mile']
 "Scott Creek Beach": ['Scott']
 'Shark Fin Cove': 'Shark Fin'
 'Shark Tooth Beach': ['Shark Tooth', 'Sharks Tooth']
+'Soquel Creek': 'Soquel Creek'
 'Sunny Cove Beach': 'Sunny Cove'
 'Sunset State Beach': 'Sunset'
 'Three-Mile State Beach': ['3 Mile', '3-Mile', 'Three Mile', 'Three-Mile']

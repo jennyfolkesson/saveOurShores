@@ -57,8 +57,8 @@ Type Of Cleanup:
   type: 'str'
   material: "NA"
   activity: 'NA'
-Aluminum Foil:
-  sources: []
+Foil:
+  sources: ['Aluminum Foil']
   material: 'Metal'
   activity: "Various"
 Appliances:
@@ -78,7 +78,7 @@ Bandaids:
   material: 'Mixed'
   activity: "Hygiene"
 Batteries:
-  material: 'Metal'
+  material: 'Mixed'
   activity: 'Dumping/Disaster'
 Beverage Bottles:
   sources: ['Beverage Bottles (Plastic)']
@@ -103,13 +103,19 @@ Bottle Caps:
             'Bottle Caps (Metal)']
   material: 'Metal'
   activity: "Eating/Drinking"
-Plastic Bottle Caps:
+Bottle Caps, Plastic:
   sources: ['Bottle Caps And Rings',
             'Plastic Bottle Caps And Rings',
             'Plastic Bottle Caps Or Rings',
             'Bottle Caps (Plastic)']
   material: 'Plastic'
   activity: "Eating/Drinking"
+Bottles, Plastic:
+  sources: ['Other Plastic Bottles (Oil, Bleach, Etc.)',
+            'Plastic Motor Oil Bottles',
+            'Other Plastic Bottles']
+  material: 'Plastic'
+  activity: 'Various'
 Cans:
   sources: ['Beverage Cans',
             'Beer Cans',
@@ -163,7 +169,7 @@ Food Containers:
             'Cups & Plates (Paper)']
   material: 'Wood'
   activity: 'Eating/Drinking'
-Plastic Food Containers:
+Food Containers, Plastic:
   sources: ['Food Containers, Cups, Plates, Bowls',
             'Food Containers (Plastic)',
             'Food Containers (Foam)',
@@ -257,12 +263,6 @@ Plastic Bags:
             'Plastic Bags (Trash) New']
   material: 'Plastic'
   activity: 'Eating/Drinking'
-Plastic Bottles:
-  sources: ['Other Plastic Bottles (Oil, Bleach, Etc.)',
-            'Plastic Motor Oil Bottles',
-            'Other Plastic Bottles']
-  material: 'Plastic'
-  activity: 'Various'
 Packaging:
   sources: ['Foam Packaging',
             'Other Plastic/ Foam Packaging',
@@ -297,7 +297,7 @@ Straws:
   activity: 'Eating/Drinking'
 Syringes:
   sources: ['Syringes/Needles', 'Syringes Or Needles', 'Syringes']
-  material: 'Metal'
+  material: 'Mixed'
   activity: 'Hygiene'
 Tires:
   activity: 'Dumping/Disaster'

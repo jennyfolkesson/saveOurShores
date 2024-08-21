@@ -1,6 +1,5 @@
 import circlify
 import functools
-import glob
 import numpy as np
 import os
 import pandas as pd
@@ -20,6 +19,7 @@ PLOT_COLORS = {
     'Plastic': 'red',
     'Cloth': 'pink',
 }
+
 
 def treemap_graph(annual_data, color_scale=None):
 
@@ -98,7 +98,7 @@ class GraphMaker:
             self.col_config.loc[~self.col_config['type'].isin(['int', 'float'])]['name'],
         )
         nonnumeric_cols.remove('Date')
-        annual_data.drop(nonnumeric_cols, axis=1, inplace=True)
+        annual_data = annual_data.drop(nonnumeric_cols, axis=1)
         annual_data = annual_data.set_index('Date').rename_axis(None)
         annual_data = annual_data.groupby(annual_data.index.year).sum()
         # Sort items by sum in descending order so it's easier to decipher variables
@@ -162,7 +162,7 @@ class GraphMaker:
             fig_title = "Number of Debris Items Collected By Category and Material in {}".format(year)
 
         # Compute total of columns
-        col_sum.drop(self.nonitem_cols, axis=1, inplace=True)
+        col_sum = col_sum.drop(self.nonitem_cols, axis=1)
         col_sum = col_sum.sum(axis=0, numeric_only=True)
         # Sort values, circlify wants values sorted in descending order
         col_sum = col_sum.sort_values(ascending=False)
@@ -211,7 +211,11 @@ class GraphMaker:
                           )
             nbr_items = int(col_sum.iloc[idx])
             txt = ''
-            hovertxt = "{} <br> {}".format(item, f'{nbr_items:,}')
+            item_abbr = item
+            plastic_pos = item_abbr.find(', Plastic')
+            if plastic_pos >= 0:
+                item_abbr = item_abbr[:plastic_pos]
+            hovertxt = "{} <br> {}".format(item_abbr, f'{nbr_items:,}')
             # Text gets messy if circle is too small
             # TODO: compare text length to radius
             font_sz = 8
@@ -352,11 +356,10 @@ class GraphMaker:
         annual_volunteer['name'] = annual_volunteer.index
         annual_volunteer = pd.merge(annual_volunteer, self.col_config, how='left', on="name")
         annual_volunteer = annual_volunteer.groupby(['material']).sum()
-        annual_volunteer.drop(
-            ['name', 'sources', 'type', 'required', 'activity'], axis=1, inplace=True,
-        )
+        annual_volunteer = annual_volunteer.drop(
+            ['name', 'sources', 'type', 'required', 'activity'], axis=1)
         annual_volunteer = annual_volunteer.T
-        annual_volunteer.index.rename("Year", inplace=True)
+        annual_volunteer.index = annual_volunteer.index.rename("Year")
         # Sort by amount
         col_sum = annual_volunteer.sum(axis=0, numeric_only=True)
         col_sum = col_sum.sort_values(ascending=False)
@@ -374,19 +377,18 @@ class GraphMaker:
         )
         return fig
 
-
     def make_sos_sites(self):
         """
         Helper function create a dataframe grouped by cleanup site
         """
         sos_sites = self.sos_data.copy()
-        sos_sites['Cleanup Site'].replace([0, 1], np.NaN, inplace=True)
-        sos_sites.dropna(subset=['Cleanup Site', 'Date'], inplace=True)
+        sos_sites['Cleanup Site'].replace([0, 1], np.nan)
+        sos_sites = sos_sites.dropna(subset=['Cleanup Site', 'Date'])
         nonnumeric_cols = list(
             self.col_config.loc[~self.col_config['type'].isin(['int', 'float'])]['name'],
         )
         nonnumeric_cols.remove('Cleanup Site')
-        sos_sites.drop(nonnumeric_cols, axis=1, inplace=True)
+        sos_sites = sos_sites.drop(nonnumeric_cols, axis=1)
         sos_sites = sos_sites.groupby('Cleanup Site').sum()
         self.sos_sites = sos_sites.reset_index()
 
@@ -401,7 +403,7 @@ class GraphMaker:
         if self.sos_sites is None:
             self.make_sos_sites()
         sos_volunteers = self.sos_sites.copy()
-        sos_volunteers.sort_values('Total Volunteers', ascending=False, inplace=True)
+        sos_volunteers = sos_volunteers.sort_values('Total Volunteers', ascending=False)
         sos_volunteers = sos_volunteers.head(25)
         fig = go.Figure()
         fig.add_trace(go.Bar(
@@ -433,7 +435,7 @@ class GraphMaker:
         if self.sos_sites is None:
             self.make_sos_sites()
         sos_sites = self.sos_sites
-        sos_sites.sort_values('Total Items', ascending=False, inplace=True)
+        sos_sites = sos_sites.sort_values('Total Items', ascending=False)
         sos_sites = sos_sites.head(25)
         fig = go.Figure()
         fig.add_trace(go.Bar(
@@ -461,7 +463,7 @@ class GraphMaker:
         self.sos_cigs = cig_df[['Cleanup Site', 'County/City', 'Cigarette Butts']]
         self.sos_cigs = self.sos_cigs.groupby('Cleanup Site').sum()
         self.sos_cigs = self.sos_cigs.reset_index()
-        self.sos_cigs.sort_values(by=['Cigarette Butts'], ascending=False, inplace=True)
+        self.sos_cigs = self.sos_cigs.sort_values(by=['Cigarette Butts'], ascending=False)
         # Load file containing coordinates for site names and join it with the cigarette butt data
         coords = pd.read_csv(os.path.join(self.data_dir, 'cleanup_site_coordinates.csv'))
         self.sos_cigs = pd.merge(self.sos_cigs, coords, how='left', on="Cleanup Site")
@@ -621,13 +623,13 @@ class GraphMaker:
         """
         col_sum = self.sos_data.copy()
         # Sum total items
-        col_sum.drop(self.nonitem_cols, axis=1, inplace=True)
+        col_sum = col_sum.drop(self.nonitem_cols, axis=1)
         col_sum = col_sum.sum(axis=0, numeric_only=True)
         col_sum = col_sum.sort_values(ascending=False)
         # Add activity to dataframe
         col_sum = col_sum.to_frame(name='count')
         col_sum.insert(0, 'name', col_sum.index)
-        col_sum.reset_index(drop=True, inplace=True)
+        col_sum = col_sum.reset_index(drop=True)
         col_sum = pd.merge(col_sum, self.col_config, how='left', on="name")
         # Bar plot
         fig = px.bar(col_sum, x='activity', y='count', color='name', text="name")

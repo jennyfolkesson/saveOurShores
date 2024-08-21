@@ -56,7 +56,7 @@ def orient_data(sos_data):
         sos_data = sos_data.T
         # Drop NaN columns
         if sos_data.columns.isna().any():
-            sos_data.drop([np.nan], axis=1, inplace=True)
+            sos_data = sos_data.drop([np.nan], axis=1)
         # Drop NaN rows
         sos_data = sos_data.dropna(how='all')
     return sos_data
@@ -110,7 +110,7 @@ def _add_cols(sos_data, target_col, source_cols):
                     sos_data[source_col] = sos_data[source_col].apply(
                         lambda x: 0 if isinstance(x, str) else x)
                 sos_data[target_col] += sos_data[source_col]
-                sos_data.drop([source_col], axis=1, inplace=True)
+                sos_data = sos_data.drop([source_col], axis=1)
 
 
 def _rename_site(sos_data, site_name, site_keys):
@@ -337,16 +337,16 @@ def clean_columns(sos_data, config):
         sos_data[col_isect[0]],
         format='%Y-%m-%d',
         errors='coerce')
-    sos_data.dropna(subset=[col_isect[0]], inplace=True)
+    sos_data = sos_data.dropna(subset=[col_isect[0]])
     sos_data = sos_data.reset_index(drop=True)
     dest_cols.remove('Date')
     df['Date'] = sos_data[col_isect[0]].copy()
-    sos_data.drop(col_isect[0], axis=1, inplace=True)
+    sos_data = sos_data.drop(col_isect[0], axis=1)
     # Old data has 'Volunteer Hours', which is 'Duration (Hrs)' * 'Adult Volunteers'
     if 'Volunteer Hours' in sos_data.columns:
-        sos_data['# Of Volunteers'].replace(0, 1, inplace=True)
+        sos_data['# Of Volunteers'] = sos_data['# Of Volunteers'].replace(0, 1)
         sos_data['Duration (Hrs)'] = sos_data['Volunteer Hours'] / sos_data['# Of Volunteers'].fillna(1)
-        sos_data.drop('Volunteer Hours', axis=1, inplace=True)
+        sos_data = sos_data.drop('Volunteer Hours', axis=1)
     # Loop through remaining names in config
     for dest_name in dest_cols:
         col_info = config[dest_name]
@@ -357,10 +357,10 @@ def clean_columns(sos_data, config):
         if len(col_isect) > 0:
             if col_info['type'] == 'str':
                 df[dest_name] = sos_data[col_isect[0]].astype(str)
-                sos_data.drop([col_isect[0]], axis=1, inplace=True)
+                sos_data = sos_data.drop([col_isect[0]], axis=1)
             elif col_info['type'] == 'datetime':
                 df[dest_name] = pd.to_datetime(sos_data[col_isect[0]])
-                sos_data.drop([col_isect[0]], axis=1, inplace=True)
+                sos_data = sos_data.drop([col_isect[0]], axis=1)
             else:
                 df[dest_name] = 0.
                 for col_name in col_isect:
@@ -369,7 +369,7 @@ def clean_columns(sos_data, config):
                     #     lambda x: 0 if isinstance(x, str) else x)
                     sos_data[col_name] = pd.to_numeric(sos_data[col_name], errors='coerce')
                     df[dest_name] += sos_data[col_name].fillna(0)
-                    sos_data.drop([col_name], axis=1, inplace=True)
+                    sos_data = sos_data.drop([col_name], axis=1)
     # Sum rest of the data in an 'Other' column
     df['Other'] = sos_data.fillna(0).sum(axis=1, numeric_only=True)
     return df
@@ -397,10 +397,10 @@ def merge_data(data_dir):
         sos_data = orient_data(sos_data)
         sos_data = clean_columns(sos_data, config)
         # Can't have numeric values in cleanup site
-        sos_data['Cleanup Site'].replace([0, 1], np.NaN, inplace=True)
-        sos_data['Date'].replace(0, np.NaN, inplace=True)
+        sos_data['Cleanup Site'].replace([0, 1], np.nan)
+        sos_data['Date'].replace(0, np.nan)
         # All datasets must contain date and site (this also removes any summary)
-        sos_data.dropna(subset=['Cleanup Site', 'Date'], inplace=True)
+        sos_data.dropna(subset=['Cleanup Site', 'Date'])
         # TODO: separate site names and lat, lon coordinates
         sos_data = merge_sites(sos_data, coords=coords)
         cleaned_data.append(sos_data)
@@ -411,7 +411,7 @@ def merge_data(data_dir):
         ignore_index=True,
     )
     # Sort by date
-    merged_data.sort_values(by='Date', inplace=True)
+    merged_data = merged_data.sort_values(by='Date')
     return merged_data, config
 
 
@@ -432,7 +432,7 @@ def read_data(data_dir):
         sos_data = pd.read_csv(existing_file[0])
         sos_data['Date'] = pd.to_datetime(sos_data['Date'], errors='coerce')
     else:
-        sos_data = cleanup.merge_data(data_dir)
+        sos_data = merge_data(data_dir)
         sos_data.to_csv(os.path.join(data_dir, "merged_sos_data.csv"), index=False)
 
     # Read config for columns (created when running cleanup main)
@@ -441,11 +441,11 @@ def read_data(data_dir):
     nonitem_cols = list(col_config.loc[col_config['material'].isnull()]['name'])
     # Create bar graph for years 2013-23
     # Add Total Volunteers and Total Items to col config
-    col_config.loc[len(col_config.index)] = ['Total Volunteers', ['Adult + 0.5*Youth'], 'float', False, np.NaN, np.NaN]
-    col_config.loc[len(col_config.index)] = ['Total Items', ['Sum of items per event'], 'int', False, np.NaN, np.NaN]
+    col_config.loc[len(col_config.index)] = ['Total Volunteers', ['Adult + 0.5*Youth'], 'float', False, np.nan, np.nan]
+    col_config.loc[len(col_config.index)] = ['Total Items', ['Sum of items per event'], 'int', False, np.nan, np.nan]
     # ...and to dataframe
     items = sos_data.copy()
-    items.drop(nonitem_cols, axis=1, inplace=True)
+    items.drop(nonitem_cols, axis=1)
     sos_data['Total Items'] = items.sum(axis=1, numeric_only=True)
     sos_data['Total Volunteers'] = sos_data['Adult Volunteers'].fillna(0) + 0.5 * sos_data['Youth Volunteers'].fillna(0)
     return sos_data, col_config

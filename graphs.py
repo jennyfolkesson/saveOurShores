@@ -80,7 +80,7 @@ class GraphMaker:
             fig = func(self, *args, **kwargs)
             if 'fig_name' in kwargs and kwargs['fig_name'] is not None:
                 file_path = os.path.join(self.image_dir, kwargs['fig_name'] + self.ext)
-                fig.write_image(file_path)
+                fig.write_image(file_path, scale=5)
             return fig
         return write_fig
 
@@ -256,7 +256,13 @@ class GraphMaker:
             height=1000,
             # paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            title=fig_title,
+            # title=fig_title,
+            legend=dict(
+                yanchor="top",
+                y=0.93,
+                xanchor="right",
+                x=0.96,
+            )
         )
         return fig
 

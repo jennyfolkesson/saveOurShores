@@ -158,7 +158,7 @@ class GraphMaker:
             fig_title = "Number of Debris Items Collected By Category and Material in 2023"
         else:
             assert 2013 <= year <= 2023, "Year must be within 2013-2023"
-            col_sum = self.sos_data[sos_data['Date'].dt.year == year]
+            col_sum = self.sos_data[self.sos_data['Date'].dt.year == year]
             fig_title = "Number of Debris Items Collected By Category and Material in {}".format(year)
 
         # Compute total of columns
@@ -501,7 +501,7 @@ class GraphMaker:
             cig_df = self.sos23.copy()
         else:
             assert 2013 <= year <= 2023, "Year must be within 2013-2023"
-            cig.df = self.sos_data[sos_data['Date'].dt.year == year]
+            cig_df = self.sos_data[self.sos_data['Date'].dt.year == year]
 
         self.make_sos_cigs(cig_df)
 
@@ -524,7 +524,7 @@ class GraphMaker:
                 size='Cigarette Butts',
                 hover_name='Cleanup Site',
                 hover_data=['Cleanup Site', 'Cigarette Butts'],
-                color_discrete_sequence=['fuchsia'],
+                color_discrete_sequence=[SOS_BLUE],  # ['fuchsia'],
                 zoom=8,
             )
         else:

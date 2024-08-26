@@ -65,16 +65,17 @@ def orient_data(sos_data):
 def add_coords(sos_data):
     """
     This function is intended to look up lat, lon coordinates for
-    cleanup sites, but I'm currently running into a timeout error
-    when trying it for a sos_data dataframe.
-    TODO: use known coordinates from csv first and only look up missing coords
+    cleanup sites.
+    Use known site coordinates from csv first and only look up less common
+    sites with missing coordinates in order to avoid running into
+    timeout errors due to heavy usage:
+    https://operations.osmfoundation.org/policies/nominatim/
 
     :param pd.DataFrame sos_data: SOS data
-    :return pd.DataFrame sos_coords: SOS data with lat, lon
+    :return pd.DataFrame sos_coords: SOS data with lat, lon coordinates
     """
     geolocator = Nominatim(user_agent="save_our_shores")
-    # sos_data['Latitude'] = 0.
-    # sos_data['Longitude'] = 0.
+
     for idx, row in sos_data.iterrows():
         if row['Latitude'] != row['Latitude']:
             geo_str = row['Cleanup Site'] + ', ' + row['County/City'] + ', CA'
@@ -137,7 +138,9 @@ def _replace_name(sos_data, old_str, new_str):
 def site_names_from_coords(sos_data, coords, dist_thresh=1.):
     """
     Some Cleanup Sites have coordinates in string format instead of names.
-    Try to replace them with names for know sites if possible.
+    Replace them with names for knows sites if possible. A replacement
+    with a site name is made if if the geographic coordinates are within
+    a min_thresh distance (km) from a known site.
 
     :param pd.DataFrame sos_data: SOS data
     :param pd.DataFrame coords: Cleanup sites with known coordinates
@@ -146,18 +149,23 @@ def site_names_from_coords(sos_data, coords, dist_thresh=1.):
     coord_sites = sos_data[sos_data['Cleanup Site'].str.contains(', ')]
     for idx, row in coord_sites.iterrows():
         c = row['Cleanup Site'].split(', ')
+        # If coordinates are read as integer strings
         if c[0].isdigit() and c[1][1:].isdigit():
+            # Convert to valid geographic coordinates
             lat = float('0.' + c[0]) * 100
             lon = - float('0.' + c[1][1:]) * 1000
             c1 = (lat, lon)
+            # Compute distances to sites with known coordinates
             min_dist = 10000
             min_name = ''
             for c_idx, c_row in coords.iterrows():
                 c2 = (c_row['Latitude'], c_row['Longitude'])
                 dist = distance.distance(c1, c2).km
+                # If this is shortest distance yet, update min
                 if dist < min_dist:
                     min_dist = dist
                     min_name = c_row['Cleanup Site']
+            # Assign a site name if min distance is less than threshold
             if min_dist < dist_thresh:
                 sos_data.loc[idx, 'Cleanup Site'] = min_name
 
@@ -166,11 +174,6 @@ def merge_sites(sos_data, coords, config_name='site_categories.yml'):
     """
     Standardizing cleanup site names, so each site has its own name that
     is consistent across data sets.
-
-    TODO: Much of the 2020 data is given in lon, lat coords instead of names.
-    Need to convert these, and convert names to lon, lat for map plots.
-    geopy Nominatim seems to not work for many types on input...
-    Find other free service?
 
     :param pd.DataFrame sos_data: Dataframe processed with the merge_columns function
     :param str config_name: Path to YAML file containing site names and search keys
@@ -303,7 +306,6 @@ def clean_columns(sos_data, config):
     required can be True or False. If unspecified, default is False.
     Source columns with numeric content that are not listed in the config file
     will be combined into one destination column named 'Other'.
-    TODO: todo make config file name an input
 
     Comments:  Inspired by NOAA's ocean debris report.
     It's hard to completely follow NOAA's categories because some of the
@@ -388,31 +390,31 @@ def merge_data(data_dir):
     file_paths = glob.glob(os.path.join(data_dir, '*.xlsx'))
     # Remove coordinates file
     file_paths = [s for s in file_paths if not s.endswith('Coordinates.xlsx')]
-    config = read_col_config()
-    coords = pd.read_csv(os.path.join(data_dir, 'cleanup_site_coordinates.csv'))
+    col_config = read_col_config()
+    site_coords = pd.read_csv(os.path.join(data_dir, 'cleanup_site_coordinates.csv'))
     cleaned_data = []
     for file_path in file_paths:
         print("Analyzing file: ", file_path)
         sos_data = pd.read_excel(file_path, na_values=['UNK', 'Unk', '-', '#REF!'])
         sos_data = orient_data(sos_data)
-        sos_data = clean_columns(sos_data, config)
+        sos_data = clean_columns(sos_data, col_config)
         # Can't have numeric values in cleanup site
         sos_data['Cleanup Site'].replace([0, 1], np.nan)
         sos_data['Date'].replace(0, np.nan)
         # All datasets must contain date and site (this also removes any summary)
         sos_data.dropna(subset=['Cleanup Site', 'Date'])
         # TODO: separate site names and lat, lon coordinates
-        sos_data = merge_sites(sos_data, coords=coords)
+        sos_data = merge_sites(sos_data, coords=site_coords)
         cleaned_data.append(sos_data)
     # Concatenate the dataframes
-    merged_data = pd.concat(
+    total_data = pd.concat(
         cleaned_data,
         axis=0,
         ignore_index=True,
     )
     # Sort by date
-    merged_data = merged_data.sort_values(by='Date')
-    return merged_data, config
+    total_data = total_data.sort_values(by='Date')
+    return total_data, config
 
 
 def read_data(data_dir):

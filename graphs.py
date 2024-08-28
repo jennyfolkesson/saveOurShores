@@ -60,7 +60,6 @@ class GraphMaker:
                  col_config,
                  ext='.png'):
 
-        self.sos_blue = '#00b5e2'
         self.data_dir = data_dir
         self.sos_data = sos_data
         self.sos23 = sos_data[sos_data['Date'].dt.year == 2023]
@@ -318,7 +317,7 @@ class GraphMaker:
             yaxis_title='Number of Volunteers',
             xaxis_title='Year',
         )
-        fig.update_traces(marker_color=self.sos_blue)
+        fig.update_traces(marker_color=SOS_BLUE)
         return fig
 
     @writes
@@ -419,7 +418,7 @@ class GraphMaker:
             x=sos_volunteers['Adult Volunteers'],
             orientation='h',
             name='Total Cleanup Volunteers',
-            marker=dict(color=self.sos_blue),
+            marker=dict(color=SOS_BLUE),
         ))
         fig.update_layout(
             autosize=False,
@@ -451,7 +450,7 @@ class GraphMaker:
             x=sos_sites['Total Items'],
             orientation='h',
             name='Total Number of Items Cleaned Up',
-            marker=dict(color=self.sos_blue),
+            marker=dict(color=SOS_BLUE),
         ))
         fig.update_layout(
             autosize=False,
@@ -670,7 +669,7 @@ def make_and_save_graphs(data_dir, ext='.png'):
     :param str ext: Graph file extention (default: '.png')
     """
     # Read collected data and config as dataframes
-    sos_data, col_config = cleanup.read_data(data_dir)
+    sos_data, col_config = cleanup.read_data_and_config(data_dir)
     # Instantiate graph maker
     graph_maker = GraphMaker(data_dir, sos_data, col_config, ext)
     # Get data from 2023 and make circle packing graph

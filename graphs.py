@@ -10,6 +10,8 @@ import plotly.graph_objects as go
 import cleanup as cleanup
 
 SOS_BLUE = '#00b5e2'
+GRAPH_WIDTH = 800
+GRAPH_HEIGHT = 500
 
 PLOT_COLORS = {
     'Mixed': 'grey',
@@ -252,8 +254,8 @@ class GraphMaker:
         fig.update_traces(showlegend=True)
         fig.update_layout(
             autosize=False,
-            width=1000,
-            height=1000,
+            width=800,
+            height=800,
             # paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             # title=fig_title,
@@ -287,8 +289,8 @@ class GraphMaker:
         fig = px.bar(annual_items, x=annual_items.index, y=annual_items.columns)
         fig.update_layout(
             autosize=False,
-            width=1000,
-            height=700,
+            width=GRAPH_WIDTH + 100,
+            height=GRAPH_HEIGHT,
             title=fig_title,
             yaxis_title='Number of Debris Items',
             xaxis_title='Year',
@@ -311,8 +313,8 @@ class GraphMaker:
                      title="Total Number of Volunteers By Year")
         fig.update_layout(
             autosize=False,
-            width=850,
-            height=400,
+            width=GRAPH_WIDTH,
+            height=GRAPH_HEIGHT,
             yaxis_title='Number of Volunteers',
             xaxis_title='Year',
         )
@@ -336,8 +338,8 @@ class GraphMaker:
         fig = px.line(annual_volunteer, x=annual_volunteer.index, y=annual_volunteer.columns)
         fig.update_layout(
             autosize=False,
-            width=1000,
-            height=700,
+            width=GRAPH_WIDTH,
+            height=GRAPH_HEIGHT,
             title="Debris Items Collected Per Volunteer For the Years 2013-23",
             yaxis_title='Number of Items Per Volunteer',
             xaxis_title='Year',
@@ -374,8 +376,8 @@ class GraphMaker:
         fig = px.line(annual_volunteer, x=annual_volunteer.index, y=annual_volunteer.columns)
         fig.update_layout(
             autosize=False,
-            width=1000,
-            height=700,
+            width=GRAPH_WIDTH,
+            height=GRAPH_HEIGHT,
             title="Debris Items By Material Per Volunteer For the Years 2013-23",
             yaxis_title='Number of Items Per Volunteer',
             xaxis_title='Year',
@@ -421,8 +423,8 @@ class GraphMaker:
         ))
         fig.update_layout(
             autosize=False,
-            width=1000,
-            height=800,
+            width=GRAPH_WIDTH + 100,
+            height=GRAPH_HEIGHT + 100,
             title="Top 25 Cleanup Sites by Number of Volunteers 2013-23",
             yaxis_title='Cleanup site',
             xaxis_title='Total Number of Volunteers',
@@ -453,8 +455,8 @@ class GraphMaker:
         ))
         fig.update_layout(
             autosize=False,
-            width=1000,
-            height=800,
+            width=GRAPH_WIDTH,
+            height=GRAPH_HEIGHT,
             title="Top 25 Cleanup Sites By Number of Debris Items 2013-23",
             yaxis_title='Cleanup Site',
             xaxis_title='Total Number of Items',
@@ -513,9 +515,9 @@ class GraphMaker:
                 "north": self.sos_cigs['Latitude'].max() + .01,
             }
         if w is None:
-            w = 1000
+            w = 800
         if h is None:
-            h = 1000
+            h = 800
         if single_color:
             fig = px.scatter_mapbox(
                 data_frame=self.sos_cigs,
@@ -559,8 +561,8 @@ class GraphMaker:
                       y=['Cigarette Butts', 'Cigar Tips', 'E-Waste', 'Tobacco', 'Lighters'])
         fig.update_layout(
             autosize=False,
-            width=1000,
-            height=600,
+            width=GRAPH_WIDTH,
+            height=GRAPH_HEIGHT,
             title='Smoking Debris Items Per Volunteer',
             yaxis_title='Number of Items Per Volunteer',
             xaxis_title='Year',
@@ -601,8 +603,8 @@ class GraphMaker:
             x=df_notstate.index, y=df_notstate["Cigarette Butts"], name='Not State'))
         fig.update_layout(
             autosize=False,
-            width=1000,
-            height=600,
+            width=GRAPH_WIDTH,
+            height=GRAPH_HEIGHT,
             title='Cigarette Butts Per Volunteer on State vs Not State Beaches',
             yaxis_title='Cigarette Butts Per Volunteer',
             xaxis_title='Year',
@@ -641,8 +643,8 @@ class GraphMaker:
         fig = px.bar(col_sum, x='activity', y='count', color='name', text="name")
         fig.update_layout(
             autosize=False,
-            width=1000,
-            height=700,
+            width=GRAPH_WIDTH + 100,
+            height=GRAPH_HEIGHT + 100,
             title="Number of Debris Items Collected By Activity, 2013-23",
             yaxis_title='Total Number of Items',
             xaxis_title='Activity',

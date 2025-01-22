@@ -242,6 +242,7 @@ class DataPipeline:
         self.sos_data = self.sos_data.drop(col_isect[0], axis=1)
         # Old data has 'Volunteer Hours', which is 'Duration (Hrs)' * 'Adult Volunteers'
         if 'Volunteer Hours' in self.sos_data.columns:
+            self.sos_data['# Of Volunteers'] = self.sos_data['# Of Volunteers'].astype('int32')
             self.sos_data['# Of Volunteers'] = \
                 self.sos_data['# Of Volunteers'].replace(0, 1)
             self.sos_data['Duration (Hrs)'] = (

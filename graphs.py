@@ -62,7 +62,7 @@ class GraphMaker:
 
         self.data_dir = data_dir
         self.sos_data = sos_data
-        self.sos23 = sos_data[sos_data['Date'].dt.year == 2023]
+        self.year_to_date = sos_data['Date'].dt.year.max()
         self.col_config = col_config
         self.nonitem_cols = list(col_config.loc[col_config['material'].isnull()]['name'])
         self.item_cols = list(col_config.loc[col_config['material'].notnull()]['name'])
@@ -153,14 +153,13 @@ class GraphMaker:
         if year is None:
             # Default is all years
             col_sum = self.sos_data.copy()
-            fig_title = "Number of Debris Items Collected By Category and Material 2013-2023"
-        elif year == 2023:
-            col_sum = self.sos23.copy()
-            fig_title = "Number of Debris Items Collected By Category and Material in 2023"
+            fig_title = ("Number of Debris Items Collected By Category and "
+                         "Material 2013-{}").format(self.year_to_date)
         else:
-            assert 2013 <= year <= 2023, "Year must be within 2013-2023"
+            assert 2013 <= year <= self.year_to_date, "Year must be within 2013-last year"
             col_sum = self.sos_data[self.sos_data['Date'].dt.year == year]
-            fig_title = "Number of Debris Items Collected By Category and Material in {}".format(year)
+            fig_title = ("Number of Debris Items Collected By Category and "
+                         "Material in {}").format(year)
 
         # Compute total of columns
         col_sum = col_sum.drop(self.nonitem_cols, axis=1)
@@ -278,12 +277,12 @@ class GraphMaker:
         :return px.fig fig: Bar plot of total trash items
         """
         annual_items = self.annual_data[self.annual_data.columns.intersection(self.item_cols)]
-        fig_title = "Total Number of Debris Items Collected By Category, 2013-23"
+        fig_title = "Total Number of Debris Items Collected By Category, 2013-now"
         if item_nbr is not None:
             assert item_nbr < annual_items.shape[1], \
                 'item_nbr must be smaller than total number of items'
             annual_items = annual_items.iloc[:, :item_nbr]
-            fig_title = "Top {} Number of Debris Items Collected By Category, 2013-23".format(item_nbr)
+            fig_title = "Top {} Number of Debris Items Collected By Category, 2013-now".format(item_nbr)
 
         fig = px.bar(annual_items, x=annual_items.index, y=annual_items.columns)
         fig.update_layout(
@@ -295,6 +294,9 @@ class GraphMaker:
             xaxis_title='Year',
             legend_title='Debris Category',
         )
+        fig.update_xaxes(
+            dtick='Y1',
+        )
         return fig
 
     @writes
@@ -305,7 +307,7 @@ class GraphMaker:
         :param str fig_name: If not None, save fig with given name
         :return px.bar fig: Plotly figure bar plot
         """
-        # Create bar graph for number of volunteers over the years 2013-23
+        # Create bar graph for number of volunteers over the years 2013-now
         fig = px.bar(self.annual_data,
                      x=self.annual_data.index,
                      y='Total Volunteers',
@@ -316,6 +318,9 @@ class GraphMaker:
             height=GRAPH_HEIGHT,
             yaxis_title='Number of Volunteers',
             xaxis_title='Year',
+        )
+        fig.update_xaxes(
+            dtick='Y1',
         )
         fig.update_traces(marker_color=SOS_BLUE)
         return fig
@@ -339,10 +344,13 @@ class GraphMaker:
             autosize=False,
             width=GRAPH_WIDTH,
             height=GRAPH_HEIGHT,
-            title="Debris Items Collected Per Volunteer For the Years 2013-23",
+            title="Debris Items Collected Per Volunteer For the Years 2013-{}".format(self.year_to_date),
             yaxis_title='Number of Items Per Volunteer',
             xaxis_title='Year',
             legend_title='Debris Category',
+        )
+        fig.update_xaxes(
+            dtick='Y1',
         )
         return fig
 
@@ -377,10 +385,13 @@ class GraphMaker:
             autosize=False,
             width=GRAPH_WIDTH,
             height=GRAPH_HEIGHT,
-            title="Debris Items By Material Per Volunteer For the Years 2013-23",
+            title="Debris Items By Material Per Volunteer For the Years 2013-{}".format(self.year_to_date),
             yaxis_title='Number of Items Per Volunteer',
             xaxis_title='Year',
             legend_title='Material',
+        )
+        fig.update_xaxes(
+            dtick='Y1',
         )
         return fig
 
@@ -424,7 +435,7 @@ class GraphMaker:
             autosize=False,
             width=GRAPH_WIDTH + 100,
             height=GRAPH_HEIGHT + 100,
-            title="Top 25 Cleanup Sites by Number of Volunteers 2013-23",
+            title="Top 25 Cleanup Sites by Number of Volunteers 2013-{}".format(self.year_to_date),
             yaxis_title='Cleanup site',
             xaxis_title='Total Number of Volunteers',
             yaxis={'categoryorder': 'total ascending'}
@@ -456,7 +467,7 @@ class GraphMaker:
             autosize=False,
             width=GRAPH_WIDTH,
             height=GRAPH_HEIGHT,
-            title="Top 25 Cleanup Sites By Number of Debris Items 2013-23",
+            title="Top 25 Cleanup Sites By Number of Debris Items 2013-{}".format(self.year_to_date),
             yaxis_title='Cleanup Site',
             xaxis_title='Total Number of Items',
             yaxis={'categoryorder': 'total ascending'}
@@ -498,10 +509,8 @@ class GraphMaker:
         if year is None:
             # Default is all years
             cig_df = self.sos_data.copy()
-        elif year == 2023:
-            cig_df = self.sos23.copy()
         else:
-            assert 2013 <= year <= 2023, "Year must be within 2013-2023"
+            assert 2013 <= year <= self.year_to_date, "Year must be within 2013-last year"
             cig_df = self.sos_data[self.sos_data['Date'].dt.year == year]
 
         self.make_sos_cigs(cig_df)
@@ -567,6 +576,9 @@ class GraphMaker:
             xaxis_title='Year',
             legend_title='Debris Category',
         )
+        fig.update_xaxes(
+            dtick='Y1',
+        )
         return fig
 
     @writes
@@ -609,6 +621,9 @@ class GraphMaker:
             xaxis_title='Year',
             legend_title='Beach Type'
         )
+        fig.update_xaxes(
+            dtick='Y1',
+        )
         # Smoking ban came into effect in the beginning of 2020 so all data collected
         # in 2020 was after the ban
         fig.add_vline(x=2019.5, line_dash="dot",
@@ -644,7 +659,7 @@ class GraphMaker:
             autosize=False,
             width=GRAPH_WIDTH + 100,
             height=GRAPH_HEIGHT + 100,
-            title="Number of Debris Items Collected By Activity, 2013-23",
+            title="Number of Debris Items Collected By Activity, 2013-{}".format(self.year_to_date),
             yaxis_title='Total Number of Items',
             xaxis_title='Activity',
             legend_title='Debris Category',
@@ -672,33 +687,33 @@ def make_and_save_graphs(data_dir, ext='.png'):
     sos_data, col_config = cleanup.read_data_and_config(data_dir)
     # Instantiate graph maker
     graph_maker = GraphMaker(data_dir, sos_data, col_config, ext)
-    # Get data from 2023 and make circle packing graph
+    # Get data and make circle packing graph
     _ = graph_maker.circle_packing_graph(
         plot_colors=None,
-        fig_name="Circle_packing_items_materials_2013-23",
+        fig_name="Circle_packing_items_materials_all_years",
     )
     # All items over the years
-    _ = graph_maker.annual_total_bar(fig_name="Bar_graph_all_items_2013-23")
+    _ = graph_maker.annual_total_bar(fig_name="Bar_graph_all_items_2013-now")
     # Top 5 items over the years
-    _ = graph_maker.annual_total_bar(item_nbr=5, fig_name="Bar_graph_top_5_items_2013-23")
+    _ = graph_maker.annual_total_bar(item_nbr=5, fig_name="Bar_graph_top_5_items_2013-now")
     # Annual volunteers
-    _ = graph_maker.annual_volunteers(fig_name="Bar_graph_number_volunteers_2013-23")
-    # Number of item per volunteer line graph 2013-23
+    _ = graph_maker.annual_volunteers(fig_name="Bar_graph_number_volunteers_2013-now")
+    # Number of item per volunteer line graph 2013-now
     _ = graph_maker.item_per_volunteer(
-        fig_name="Line_graph_number_items_per_volunteers_2013-23",
+        fig_name="Line_graph_number_items_per_volunteers_2013-now",
     )
     # Items grouped by material
     _ = graph_maker.material_per_volunteer(
-        fig_name="Line_graph_material_per_volunteers_2013-23",
+        fig_name="Line_graph_material_per_volunteers_2013-now",
     )
-    # Number of volunteers by site 2013-23
-    _ = graph_maker.volunteers_by_site(fig_name="Bar_graph_top25_sites_by_volunteers_2013-23")
+    # Number of volunteers by site 2013-now
+    _ = graph_maker.volunteers_by_site(fig_name="Bar_graph_top25_sites_by_volunteers_2013-now")
     # Select top 25 sites with most items cleaned up
-    _ = graph_maker.items_by_site(fig_name="Bar_graph_top25_sites_by_items_2013-23")
-    # Map of cigarette butt locations by number 2023
+    _ = graph_maker.items_by_site(fig_name="Bar_graph_top25_sites_by_items_2013-now")
+    # Map of cigarette butt locations by number
     _ = graph_maker.cigarette_map(
         single_color=False,
-        fig_name="Map_cigarette_butts_by_location_2013-23",
+        fig_name="Map_cigarette_butts_by_location_all_years",
     )
     # Santa Cruz only
     map_bounds = {
@@ -710,14 +725,14 @@ def make_and_save_graphs(data_dir, ext='.png'):
         map_bounds=map_bounds,
         h=600,
         single_color=False,
-        fig_name="Map_cigarette_butts_Santa_Cruz_2013-23",
+        fig_name="Map_cigarette_butts_Santa_Cruz_all_years",
     )
-    # Debris caused by smoking 2013-23
-    _ = graph_maker.smoking_line_graph(fig_name="Line_graph_smoking_per_volunteers_2013-23")
+    # Debris caused by smoking 2013-now
+    _ = graph_maker.smoking_line_graph(fig_name="Line_graph_smoking_per_volunteers_2013-now")
     # Cigarette butts on state beaches
-    _ = graph_maker.smoking_state_beaches(fig_name="Line_graph_cigarettes_state_beaches_2013-23")
+    _ = graph_maker.smoking_state_beaches(fig_name="Line_graph_cigarettes_state_beaches_2013-now")
     # Debris by activity
-    _ = graph_maker.activity_graph(fig_name="Debris_by_activity_2013-23")
+    _ = graph_maker.activity_graph(fig_name="Debris_by_activity_2013-now")
 
 
 if __name__ == '__main__':

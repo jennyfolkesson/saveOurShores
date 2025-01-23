@@ -242,7 +242,6 @@ class DataPipeline:
         self.sos_data = self.sos_data.drop(col_isect[0], axis=1)
         # Old data has 'Volunteer Hours', which is 'Duration (Hrs)' * 'Adult Volunteers'
         if 'Volunteer Hours' in self.sos_data.columns:
-            self.sos_data['# Of Volunteers'] = self.sos_data['# Of Volunteers'].astype('int32')
             self.sos_data['# Of Volunteers'] = \
                 self.sos_data['# Of Volunteers'].replace(0, 1)
             self.sos_data['Duration (Hrs)'] = (
@@ -357,7 +356,7 @@ class DataPipeline:
             self.sos_data['Cleanup Site'] = self.sos_data['Cleanup Site'].apply(
                 lambda s: site_name if s.find(site_key) >= 0 else s)
 
-    def site_names_from_coords(self, dist_thresh=1.):
+    def site_names_from_coords(self, dist_thresh=1.5):
         """
         Some Cleanup Sites have coordinates in string format instead of names.
         Replace them with names for knows sites if possible. A replacement
@@ -386,6 +385,7 @@ class DataPipeline:
                         min_dist = dist
                         min_name = c_row['Cleanup Site']
                 # Assign a site name if min distance is less than threshold
+                print(min_dist, min_name)
                 if min_dist < dist_thresh:
                     self.sos_data.loc[idx, 'Cleanup Site'] = min_name
 

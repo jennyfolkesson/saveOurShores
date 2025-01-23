@@ -282,7 +282,8 @@ class GraphMaker:
             assert item_nbr < annual_items.shape[1], \
                 'item_nbr must be smaller than total number of items'
             annual_items = annual_items.iloc[:, :item_nbr]
-            fig_title = "Top {} Number of Debris Items Collected By Category, 2013-now".format(item_nbr)
+            fig_title = ("Top {} Number of Debris Items Collected By Category, "
+                         "2013-{}").format(item_nbr, self.year_to_date)
 
         fig = px.bar(annual_items, x=annual_items.index, y=annual_items.columns)
         fig.update_layout(
@@ -411,18 +412,19 @@ class GraphMaker:
         self.sos_sites = sos_sites.reset_index()
 
     @writes
-    def volunteers_by_site(self, fig_name=None):
+    def volunteers_by_site(self, nbr_sites=25, fig_name=None):
         """
         Bar graph of top 25 sites where the most volunteers participated in cleanups.
 
         :param str fig_name: If not None, save fig with given name
+        :param int nbr_sites: Number of sites displayed
         :return go.Figure fig: Plotly bar graph
         """
         if self.sos_sites is None:
             self.make_sos_sites()
         sos_volunteers = self.sos_sites.copy()
         sos_volunteers = sos_volunteers.sort_values('Total Volunteers', ascending=False)
-        sos_volunteers = sos_volunteers.head(25)
+        sos_volunteers = sos_volunteers.head(nbr_sites)
         fig = go.Figure()
         fig.add_trace(go.Bar(
             y=sos_volunteers['Cleanup Site'],

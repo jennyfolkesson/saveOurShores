@@ -2,9 +2,14 @@
 'Aptos Creek': 'Aptos'
 'Arroyo Seco': 'Arroyo Seco'
 'Asilomar State Beach': 'Asilomar'
+'Baylands Park': 'Bayland'
+'Bay View Elementary School': 'Bay View'
 'Beer Can Beach': ['Beer Can', 'Beercan']
+'Big Sur': 'Big Sur'
 'Blacks Beach': 'Black'
 'Bonny Doon State Beach': 'Bonny Doon'
+'Boulder Creek': 'Boulder Creek'
+'Bradley Elementary School': 'Bradley'
 'Capitola Beach': 'Capitola'
 'Carbonera Creek': 'Carbonera Creek'
 'Carmel Beach': 'Carmel Beach'
@@ -13,18 +18,19 @@
 'Corcoran Lagoon': ['Corcoran', 'Corcoron', '26Th']
 'Coyote Creek': 'Coyote Creek'
 'Cowell/Main Beach': ['Cowell', 'Coewll', 'Santa Cruz Main Beach', 'Main Beach', 'Cowel']
-'Davenport Landing Beach': 'Davenport Landing'
-'Davenport Main Beach': ['Davenport Main', 'Davenport Beach']
-'Del Monte Beach': 'Del Monte'
+'Davenport Beach': 'Davenport'
+'Del Monte Beach': ['Del Monte', 'Casa Verde']
+'Downtown Santa Cruz': ['Downtown Santa Cruz', 'Downtown Sc', 'City Of Santa Cruz']
 'Elkhorn Slough': 'Elkhorn Slough'
 'Felton Covered Bridge': 'Felton Covered Bridge'
 "Fisherman's Wharf": 'Fisherman'
 'Fort Ord Dunes State Beach': ['Fort Ord', 'Ft. Ord', 'Ford Ord', 'Ft Ord']
 'Four-Mile State Beach': ['4 Mile', '4-Mile', 'Four Mile', 'Four-Mile']
-'Garrapata State Beach': 'Garrapata'
+'Garrapata Beach': ['Garrapata', 'Garra Pata']
+'Gault Elementary School': 'Gault Elementary'
 'Greyhound Rock Beach': 'Greyhound'
 'Harkins Slough': 'Harkin'
-'Heller Park': ['Heller', 'Hellyer']
+'Hellyer Park': ['Heller', 'Hellyer']
 'Hidden Beach': 'Hidden Beach'
 'Laguna Creek Beach': 'Laguna'
 'Lakeview Campus': 'Lakeview'
@@ -34,8 +40,8 @@
 "Lovers Point Beach": 'Lover'
 'Manresa State Beach': ['Manresa', 'Manressa']
 'Marina State Beach': 'Marina State'
-'Mcabee State Beach': ['McAbee', 'Mcabee']
-"Mitchell's Cove Beach": ["Mitchell'S Cove", "Michelle'S Cove"]
+'Mcabee State Beach': ['McAbee', 'Mcabee', 'Macabee']
+"Mitchell's Cove Beach": ["Mitchell'S Cove", "Michelle'S Cove", "Woodrow"]
 'Monastery Beach': 'Monastery'
 'Monterey Bay Photo St.': 'Monterey Bay Photo'
 'Monterey State Beach': ['Monterey State', 'Tides']
@@ -64,21 +70,21 @@
 'Shark Fin Cove': 'Shark Fin'
 'Shark Tooth Beach': ['Shark Tooth', 'Sharks Tooth']
 'Soquel Creek': 'Soquel Creek'
+'Struve Slough': ['Struve Slough', 'West Struve', 'Ohlone Loop Trail']
 'Sunny Cove Beach': 'Sunny Cove'
 'Sunset State Beach': 'Sunset'
 'Three-Mile State Beach': ['3 Mile', '3-Mile', 'Three Mile', 'Three-Mile']
 'Twin Lakes State Beach': 'Twin Lakes'
 'Waddell State Beach': ['Waddell', 'Wadell']
-'Watsonville Slough': 'Watsonville Slough'
-'West Struve Slough': 'West Struve Slough'
-'Woodrow State Beach': 'Woodrow'
+'Watsonville': 'Watsonville'
 'Zmudowski State Beach': ['Zmudowski', 'Zumdowski']
+'SLR @ Ben Lomond': 'SLR @ Ben Lomond'
 'SLR @ Felton': 'SLR @ Felton'
 'SLR @ Slv Recycling Center': 'SLR @ Slv Recycling'
 'SLR @ The Tannery Arts Center': 'Tannery'
 'SLR @ Felker': ['SLR @ Felker', 'SLR/Felke', 'San Lorenzo River Levee','SLR Levee', 'SLR @ Hwy 1', 'SLR @ Highway 1']
 'SLR @ Fillmore': ['SLR @ Fillmore', 'SLR @ Filmore']
-'SLR @ Laurel': 'SLR @ Laurel'
-'SLR @ Riverside': 'SLR @ Riverside'
+'SLR @ Laurel': ['SLR @ Laurel', 'SLR From Laurel']
+'SLR @ Riverside': ['SLR @ Riverside', 'SLR @ The Mouth']
 'SLR @ Soquel': ['SLR @ Soquel', 'SLR (Soquel']
 'SLR @ Water': 'SLR @ Water'

@@ -249,11 +249,12 @@ class DataPipeline:
                     self.sos_data['# Of Volunteers'].fillna(1))
             self.sos_data = self.sos_data.drop('Volunteer Hours', axis=1)
         # Loop through remaining names in config
+        sos_names = list(self.sos_data)
         for dest_name in dest_cols:
             col_info = self.col_config[dest_name]
             col_isect = self._get_source_cols(
                 col_info=col_info,
-                sos_names=list(self.sos_data),
+                sos_names=sos_names,
             )
             if len(col_isect) > 0:
                 if col_info['type'] == 'str':

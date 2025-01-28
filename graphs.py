@@ -675,6 +675,19 @@ class GraphMaker:
         )
         return fig
 
+    def verified_vs_community_graph(self):
+        df = self.sos_data[self.sos_data['Date'] >= '2023-01-01'].copy()
+        df.loc[df['Data Collection'] != 'CMD', 'Data Collection'] = 'Verified'
+        df[self.item_cols] = [self.item_cols].div(df['Total Volunteers'], axis=0)
+        fig = px.scatter(
+            df,
+            x="Cigarette Butts",
+            y="Plastic Pieces",
+            color="Data Collection",
+            hover_data=['Cigarette Butts', 'Plastic Pieces'],
+        )
+        return fig
+
 
 def make_and_save_graphs(data_dir, ext='.png'):
     """

@@ -18,7 +18,7 @@ Cleaned Size (Sq Miles):
   material: "NA"
   activity: 'NA'
 Data Collection:
-  sources: ['Data Collection Method']
+  sources: ['Data Source If Not Sos']
   type: str
   material: "NA"
   activity: 'NA'

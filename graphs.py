@@ -688,6 +688,48 @@ class GraphMaker:
         )
         return fig
 
+    def items_over_years_animation(self):
+        df = self.annual_data.copy()
+        df = df[df.columns.intersection(self.item_cols)]
+        df = df.cumsum()
+        val_vars = list(df)
+        df['Year'] = df.index
+        df = pd.melt(
+            df,
+            id_vars=['Year'],
+            value_vars=val_vars,
+            var_name='name',
+            value_name='cumsum',
+        )
+        df = pd.merge(df, self.col_config, how='left', on="name")
+        fig = px.bar(df,
+                     x="name",
+                     y="cumsum",
+                     color="material",
+                     animation_frame="Year",
+                     animation_group="name",
+                     range_y=[0, 550000],
+                     category_orders=dict(name=val_vars),
+                     color_discrete_map={
+                         'Plastic': 'red',
+                         'Wood': 'green',
+                         'Glass': 'yellow',
+                         'Metal': 'blue',
+                         'Cloth': 'pink',
+                         'Mixed': 'gray',
+                     }
+                     )
+        fig.update_layout(
+            autosize=False,
+            width=1400,
+            height=1000,
+            title='Cumulative Sum of Debris Items Over the Years',
+            yaxis_title='Cumulative Sum of Items',
+            xaxis_title='Year',
+            legend_title='Debris Material',
+        )
+        return fig
+
 
 def make_and_save_graphs(data_dir, ext='.png'):
     """

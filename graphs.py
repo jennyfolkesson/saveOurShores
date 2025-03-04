@@ -721,13 +721,16 @@ class GraphMaker:
                      )
         fig.update_layout(
             autosize=False,
-            width=1400,
-            height=1000,
+            width=1100,
+            height=700,
             title='Cumulative Sum of Debris Items Over the Years',
             yaxis_title='Cumulative Sum of Items',
             xaxis_title='Year',
             legend_title='Debris Material',
+            # margin=dict(l=0, r=0, t=0, b=0),
         )
+        fig['layout']['updatemenus'][0]['pad'] = dict(r=10, t=150)
+        fig['layout']['sliders'][0]['pad'] = dict(r=10, t=150, )
         return fig
 
 
